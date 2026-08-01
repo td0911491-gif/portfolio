@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #ededed;
+  font-family: var(--font-mono);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.light body {
+  background-color: #fafafa;
+  color: #111111;
+}
+
+::selection {
+  background-color: rgba(229, 48, 63, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e5303f;
+}
+
+:focus-visible {
+  outline: 2px solid #e5303f;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Terminal chrome dots, reused across the nav/hero/cards */
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+/* Ambient background grid used behind the hero */
+.bg-terminal-grid {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+html.light .bg-terminal-grid {
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+}
+
+.text-glow {
+  text-shadow: 0 0 24px rgba(229, 48, 63, 0.45);
+}
+
+.prose-blog {
+  color: #cfcfcf;
+  line-height: 1.75;
+}
+.prose-blog h2 {
+  color: #ededed;
+  font-weight: 700;
+  margin-top: 2.2em;
+  margin-bottom: 0.6em;
+  font-size: 1.3em;
+}
+.prose-blog p {
+  margin-bottom: 1.2em;
+}
+.prose-blog code {
+  background: #1a1a1a;
+  border: 1px solid #262626;
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.9em;
+  color: #ff8a93;
+}
+.prose-blog pre {
+  background: #101010;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 1.2em;
+  overflow-x: auto;
+  margin-bottom: 1.4em;
+}
+.prose-blog pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #ededed;
+}
+.prose-blog a {
+  color: #e5303f;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
