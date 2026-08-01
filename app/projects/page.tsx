@@ -32,8 +32,8 @@ export default function ProjectsPage() {
       </p>
       <h1 className="text-3xl font-bold tracking-tight text-ink">Projects</h1>
       <p className="mt-2 max-w-xl text-sm text-ink-secondary">
-        Everything here is pulled straight from a single data file — new work shows up
-        the moment it's added.
+        // eslint-disable-next-line react/no-unescaped-entities
+        <p>{"Here it&apos;s a project about X"}</p>
       </p>
 
       {projects.length > 0 && (
