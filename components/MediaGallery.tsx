@@ -1,26 +1,24 @@
-import Image from "next/image";
 "use client";
 
-import React from "react";
-import SomeComponent from "./SomeComponent";
-import Image from "next/image";
+import { useState } from "react";
+import { X } from "lucide-react";
+import { MediaItem } from "@/types";
 
 function MediaThumb({ item }: { item: MediaItem }) {
   if (item.type === "image") {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={item.src} alt={item.caption ?? ""} className="h-full w-full object-cover" />;
   }
-if (item.type === "youtube") {
-  return (
-    <Image
-      src={`https://img.youtube.com/vi/${item.id}/hqdefault.jpg`}
-      alt={item.caption ?? "video thumbnail"}
-      className="h-full w-full object-cover"
-      width={800}
-      height={600}
-    />
-  );
-}
+  if (item.type === "youtube") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`https://img.youtube.com/vi/${item.id}/hqdefault.jpg`}
+        alt={item.caption ?? "video thumbnail"}
+        className="h-full w-full object-cover"
+      />
+    );
+  }
   return (
     <div className="flex h-full w-full items-center justify-center bg-bg-raised text-xs text-ink-muted">
       video
