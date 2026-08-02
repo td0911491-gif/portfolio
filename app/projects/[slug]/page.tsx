@@ -59,26 +59,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
       <div className="mt-6 flex flex-wrap gap-3">
         {project.github && (
-          
-            href={project.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded border border-border px-4 py-2 text-xs font-semibold text-ink-secondary hover:border-red hover:text-red"
-          >
+          <a href={project.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-border px-4 py-2 text-xs font-semibold text-ink-secondary hover:border-red hover:text-red">
             <Github size={13} /> GitHub
           </a>
         )}
         {project.liveDemo && (
-          
-            href={project.liveDemo}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded border border-red bg-red px-4 py-2 text-xs font-semibold text-white"
-          >
-            <ExternalLink size={13} /> Live Demo
-          </a>
-        )}
-      </div>
-
-      {project.gallery && project.gallery.length > 0 && (
-        <div className="mt-10">
+          <a href={project.liveDemo} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-red bg-red px-4 py-2 text-xs font-semibold text-white">
