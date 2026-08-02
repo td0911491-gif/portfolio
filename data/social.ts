@@ -5,8 +5,8 @@ import { SocialLink } from "@/types";
 export const socialLinks: SocialLink[] = [
   { label: "GitHub", href: "https://github.com/td0911491-gif", icon: "github" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/tamoghna-dhar-5a8773394", icon: "linkedin" },
-  { label: "LeetCode", href: "https://leetcode.com/your-username", icon: "leetcode" },
-  { label: "Codeforces", href: "https://codeforces.com/profile/your-username", icon: "codeforces" },
+  { label: "LeetCode", href: "https://leetcode.com/u/td0911491-gif/", icon: "leetcode" },
+  { label: "Codeforces", href: "https://codeforces.com/profile/td0911491", icon: "codeforces" },
   { label: "Discord", href: "#", icon: "discord" }
 ];
 

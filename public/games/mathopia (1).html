@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATHOPIA — The Number Kingdoms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0a14;
+    --panel: #16131f;
+    --panel-2: #1e1a2c;
+    --line: #3a324f;
+    --text: #eae6ff;
+    --text-dim: #8d84ac;
+
+    --hp-good: #4ade80;
+    --hp-mid: #ffc23c;
+    --hp-bad: #ff5f6d;
+
+    --void: #b46cff;
+    --void-dim: #5a3a8a;
+    --gold: #ffd23c;
+
+    --p-black:#100e18; --p-white:#f2eefc; --p-skin:#e8b98a; --p-hair:#5b3a29;
+    --p-blue:#4a7fd6; --p-goldc:#ffd23c; --p-red:#e5453f; --p-teal:#3fd6b0;
+    --p-gray:#7d7891; --p-purple:#9b4fe0; --p-glow:#ff5fd2; --p-darkred:#7a1c24;
+    --p-armor2:#2f4f9e; --p-green:#3fbf5a; --p-cape:#2a3a6e;
+
+    --track-primary: #ffc23c;
+    --track-middle: #3fd6b0;
+    --track-secondary: #ff6b7a;
+  }
+
+  * { box-sizing: border-box; image-rendering: pixelated; }
+
+  html, body, button, input, select, .kingdom-card, .chapter-card, .node, .spell-btn, .swatch {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g><path d="M14 1 L16.4 10.6 L26 13 L16.4 15.4 L14 25 L11.6 15.4 L2 13 L11.6 10.6 Z" fill="%23ffd23c" stroke="%237a5a11" stroke-width="1"/><circle cx="14" cy="13" r="2.1" fill="%23fff7d6"/></g></svg>') 14 14, auto;
+  }
+
+  .sparkle-trail {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    width: 6px; height: 6px;
+    border-radius: 1px;
+    background: var(--gold);
+    box-shadow: 0 0 6px 1px rgba(255,210,60,0.8);
+    transform: rotate(45deg);
+    animation: sparkleFade 0.7s ease-out forwards;
+  }
+  @keyframes sparkleFade {
+    0%   { opacity: 1; transform: rotate(45deg) scale(1); }
+    100% { opacity: 0; transform: rotate(45deg) scale(0.2) translateY(10px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sparkle-trail { display: none; }
+  }
+
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg);
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+    font-family: 'VT323', monospace; color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 14px; font-size: 18px;
+  }
+  .pixel-font { font-family: 'Press Start 2P', monospace; }
+  .stage { width: 100%; max-width: 800px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap: wrap; gap: 8px; }
+  .brand { font-size: 13px; letter-spacing: 1px; color: var(--void); cursor: pointer; }
+  .stat-bar { display:flex; gap:8px; align-items:center; }
+  .pill { font-size: 15px; background: var(--panel); border: 2px solid var(--line); padding: 5px 12px; color: var(--text-dim); cursor: default; }
+  .pill.clickable { cursor: pointer; }
+  .pill b { color: var(--gold); }
+
+  .screen { display:none; }
+  .screen.active { display:block; animation: fadeIn 0.25s steps(4); }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  @media (prefers-reduced-motion: reduce) { .screen.active { animation:none; } }
+
+  .panel-box { background: var(--panel); border: 3px solid var(--line); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--line); padding: 26px 22px; }
+
+  .btn { font-family: 'Press Start 2P', monospace; font-size: 12px; padding: 14px 20px; background: var(--void); color: #16081f; border: 3px solid #16081f; box-shadow: 3px 3px 0 var(--void-dim); cursor: pointer; }
+  .btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--void-dim); }
+  .btn.ghost { background: var(--panel-2); color: var(--text); box-shadow: 3px 3px 0 var(--line); }
+
+  .sprite-wrap { position: relative; }
+
+  /* ---------- TITLE ---------- */
+  .title-card { text-align:center; }
+  .title-card h1 { font-size: 20px; line-height: 1.6; margin: 0 0 14px; color: var(--gold); text-shadow: 3px 3px 0 var(--void-dim); }
+  .title-card p.lore { color: var(--text-dim); font-size: 17px; max-width: 480px; margin: 0 auto 22px; line-height: 1.7; }
+  .hero-preview { display:flex; justify-content:center; margin-bottom: 18px; }
+  .name-row { display:flex; gap:10px; max-width: 340px; margin: 0 auto 12px; }
+  .name-row input { flex:1; background: var(--panel-2); border: 2px solid var(--line); color: var(--text); font-family: 'VT323', monospace; font-size: 18px; padding: 10px 12px; }
+  .name-row input:focus { outline: 2px solid var(--void); }
+  .class-select { max-width: 340px; margin: 0 auto 20px; text-align: left; }
+  .class-select label { font-size: 13px; color: var(--text-dim); display:block; margin-bottom: 6px; }
+  .class-select select { width: 100%; background: var(--panel-2); border: 2px solid var(--line); color: var(--text); font-family: 'VT323', monospace; font-size: 17px; padding: 9px 10px; }
+
+  /* ---------- INTRO STORY ---------- */
+  .intro-card { text-align: center; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; }
+  .intro-skip { text-align: right; margin-bottom: 6px; }
+  .intro-skip button { background: none; border: none; color: var(--text-dim); font-family: 'VT323', monospace; font-size: 14px; cursor: pointer; text-decoration: underline; }
+  .intro-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 6px; }
+  .intro-panel .scene { font-size: 44px; margin-bottom: 18px; animation: introFade 0.6s ease; }
+  .intro-panel p { font-size: 19px; line-height: 1.7; color: var(--text); max-width: 460px; margin: 0; animation: introFade 0.6s ease; }
+  @keyframes introFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .intro-dots { display:flex; gap: 8px; justify-content: center; margin: 18px 0; }
+  .intro-dots span { width: 8px; height: 8px; background: var(--line); border-radius: 50%; }
+  .intro-dots span.on { background: var(--gold); }
+  .intro-nav { display: flex; justify-content: center; }
+
+  /* ---------- CUSTOMIZE ---------- */
+  .customize-card { text-align: center; }
+  .customize-card h1 { font-size: 18px; color: var(--gold); margin-bottom: 16px; }
+  .custom-preview { display:flex; justify-content:center; margin-bottom: 20px; }
+  .custom-row { text-align: left; max-width: 420px; margin: 0 auto 18px; }
+  .custom-row .clabel { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); cursor: pointer; }
+  .swatch.selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--void); }
+
+  /* ---------- WORLD MAP ---------- */
+  .map-greet { text-align:center; margin-bottom: 18px; }
+  .map-greet h2 { font-size: 15px; color: var(--gold); margin-bottom: 6px; }
+  .map-greet p { color: var(--text-dim); font-size: 16px; }
+
+  .kingdoms { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:14px; margin-bottom: 16px; }
+  .kingdom-card { background: var(--panel-2); border: 2px solid var(--line); padding: 18px 16px; cursor:pointer; text-align:left; color: var(--text); font-family: inherit; }
+  .kingdom-card:hover { border-color: var(--k-accent, var(--void)); }
+  .kingdom-card .kicon { font-size: 30px; margin-bottom: 10px; }
+  .kingdom-card h3 { font-family:'Press Start 2P',monospace; font-size: 12px; margin: 0 0 8px; color: var(--k-accent, var(--gold)); }
+  .kingdom-card p { font-size: 15px; color: var(--text-dim); margin: 0 0 10px; line-height: 1.5; }
+  .kprog-row { display:flex; gap: 8px; }
+  .kprog-chip { font-size: 12px; background: var(--panel); border: 1px solid var(--line); padding: 3px 8px; color: var(--text-dim); }
+  .kprog-chip.done { color: var(--hp-good); border-color: var(--hp-good); }
+
+  .examiner-card { background: linear-gradient(180deg, #241333, #150c1f); border: 2px solid var(--void); padding: 18px 16px; text-align: center; cursor: pointer; color: var(--text); font-family: inherit; margin-top: 4px; }
+  .examiner-card.locked { opacity: 0.45; cursor: default; }
+  .examiner-card h3 { font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--p-glow); margin: 8px 0 6px; }
+  .examiner-card p { font-size: 15px; color: var(--text-dim); }
+
+  /* ---------- KINGDOM (chapter list) ---------- */
+  .kingdom-header { text-align:center; margin-bottom: 16px; }
+  .kingdom-header .tag { font-size: 10px; font-family:'Press Start 2P',monospace; color: var(--void); }
+  .kingdom-header h2 { font-size: 16px; font-family:'Press Start 2P',monospace; margin: 8px 0; color: var(--gold); }
+  .kingdom-header p { color: var(--text-dim); font-size: 15px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+  .chapters { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-bottom: 18px; }
+  .chapter-card { background: var(--panel-2); border: 2px solid var(--line); padding: 16px 14px; cursor:pointer; text-align:left; color: var(--text); font-family: inherit; }
+  .chapter-card:hover { border-color: var(--void); }
+  .chapter-card h3 { font-family:'Press Start 2P',monospace; font-size: 11px; margin: 10px 0 6px; color: var(--gold); }
+  .chapter-card p { font-size: 15px; color: var(--text-dim); margin: 0 0 8px; line-height: 1.5; }
+  .chapter-card .cprog { font-size: 13px; color: var(--text-dim); display:flex; justify-content:space-between; }
+  .chapter-card .cprog .st { color: var(--gold); }
+  .chapter-icon { font-size: 26px; }
+  .mastered-flag { display:inline-block; font-size: 10px; font-family:'Press Start 2P',monospace; color: var(--gold); border: 1px solid var(--gold); padding: 3px 6px; margin-bottom: 6px; }
+
+  /* ---------- CHAPTER PATH ---------- */
+  .realm-header { text-align:center; margin-bottom: 8px; }
+  .realm-header .tag { font-size: 10px; font-family:'Press Start 2P',monospace; color: var(--void); }
+  .realm-header h2 { font-size: 15px; font-family:'Press Start 2P',monospace; margin: 8px 0; color: var(--gold); }
+  .realm-header .lore { color: var(--text-dim); font-size: 15px; max-width: 480px; margin: 0 auto 20px; line-height: 1.6; }
+
+  .path { display:flex; align-items:flex-end; gap:6px; padding: 10px 4px; overflow-x:auto; justify-content:center; }
+  .node { flex: 0 0 auto; min-width: 58px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .node .circ { width: 42px; height:42px; border: 2px solid var(--line); background: var(--panel-2); display:flex; align-items:center; justify-content:center; font-family:'Press Start 2P',monospace; font-size: 12px; color: var(--text-dim); }
+  .node.boss .circ { border-color: var(--p-glow); }
+  .node.done .circ { background: var(--hp-good); border-color: var(--hp-good); color: #06381d; }
+  .node.current .circ { background: var(--void); border-color: var(--void); color:#16081f; box-shadow: 0 0 0 4px rgba(180,108,255,0.2); }
+  .node .stars { font-size: 12px; color: var(--gold); min-height: 14px; }
+  .node .nm { font-size: 11px; color: var(--text-dim); max-width: 66px; text-align:center; line-height:1.2; }
+
+  .briefing-box { background: var(--panel-2); border: 2px solid var(--line); padding: 14px 16px; margin-top: 16px; text-align:center; }
+  .briefing-box .lbl { font-size: 10px; font-family:'Press Start 2P',monospace; color: var(--void); margin-bottom: 8px; }
+  .briefing-box .txt { font-size: 16px; line-height: 1.6; }
+
+  .action-row { display:flex; justify-content:center; gap:12px; margin-top: 18px; flex-wrap:wrap; }
+
+  /* ---------- BATTLE ---------- */
+  .battle-field { background: linear-gradient(180deg, #1c1730 0%, #100c1a 60%, #0b0a14 100%); border: 3px solid var(--line); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--line); padding: 18px; min-height: 260px; position: relative; overflow: hidden; }
+  .combatant { text-align:center; }
+  .combatant .name { font-family:'Press Start 2P',monospace; font-size: 10px; margin-bottom: 6px; }
+  .hpbar-track { height: 12px; background: #2a2438; border: 2px solid var(--line); width: 140px; margin: 0 auto 10px; }
+  .hpbar-fill { height:100%; background: var(--hp-good); width:100%; transition: width 0.3s ease; }
+  .battle-row { display:flex; justify-content:space-between; align-items:flex-end; }
+  .enemy-side, .hero-side { display:flex; flex-direction:column; align-items:center; }
+  .enemy-side { margin-top: 6px; }
+  .combo-badge { position:absolute; top:10px; right:14px; font-size:12px; background: var(--panel); border:2px solid var(--line); padding: 4px 10px; color: var(--text-dim); }
+  .combo-badge b { color: var(--gold); }
+  .encounter-line { text-align:center; font-size: 15px; color: var(--text-dim); margin: 10px 0 4px; font-style: italic; }
+  .encounter-line.boss { color: var(--p-glow); font-style: normal; font-family:'Press Start 2P',monospace; font-size: 10px; }
+
+  .dialogue-box { background: var(--panel); border: 3px solid var(--line); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--line); padding: 20px 22px; margin-top: 14px; }
+  .q-label { font-size: 10px; font-family:'Press Start 2P',monospace; color: var(--void-dim); margin-bottom: 10px; }
+  .q-text { font-size: 28px; text-align:center; margin-bottom: 16px; color: var(--gold); }
+
+  .spell-menu { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .spell-btn { background: var(--panel-2); border: 2px solid var(--line); color: var(--text); font-family: 'VT323', monospace; font-size: 20px; padding: 12px 8px; cursor:pointer; }
+  .spell-btn::before { content: "▶ "; color: var(--void); }
+  .spell-btn:hover:not(:disabled) { border-color: var(--void); }
+  .spell-btn.correct { background: rgba(74,222,128,0.15); border-color: var(--hp-good); color: var(--hp-good); }
+  .spell-btn.wrong { background: rgba(255,95,109,0.15); border-color: var(--hp-bad); color: var(--hp-bad); }
+  .spell-btn:disabled { cursor: default; }
+  .feedback-line { min-height: 20px; text-align:center; font-size: 15px; margin-top: 12px; color: var(--text-dim); }
+
+  /* ---------- RESULT ---------- */
+  .result { text-align:center; }
+  .result .icon { font-size: 40px; margin-bottom: 8px; }
+  .result h2 { font-family:'Press Start 2P',monospace; font-size: 15px; color: var(--gold); margin-bottom: 10px; }
+  .result .stars { font-size: 22px; color: var(--gold); margin-bottom: 10px; }
+  .result p { color: var(--text-dim); font-size: 16px; max-width: 440px; margin: 0 auto 20px; line-height: 1.6; }
+  .result-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+  /* ---------- PROFILE ---------- */
+  .profile-header { text-align:center; margin-bottom: 18px; }
+  .profile-header h2 { font-size: 16px; font-family:'Press Start 2P',monospace; color: var(--gold); margin-bottom: 8px; }
+  .profile-stats { display:grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; margin-bottom: 22px; }
+  .profile-stat { background: var(--panel-2); border: 2px solid var(--line); padding: 14px; text-align:center; }
+  .profile-stat b { display:block; font-size: 20px; color: var(--gold); font-family:'Press Start 2P',monospace; margin-bottom: 6px; }
+  .profile-stat span { font-size: 13px; color: var(--text-dim); }
+  .badge-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(120px,1fr)); gap: 10px; }
+  .badge-tile { background: var(--panel-2); border: 2px solid var(--line); padding: 12px 10px; text-align:center; font-size: 12px; }
+  .badge-tile.earned { border-color: var(--gold); }
+  .badge-tile .bicon { font-size: 22px; margin-bottom: 6px; display:block; }
+  .badge-tile.locked { opacity: 0.35; }
+
+  /* ---------- ENDING ---------- */
+  .ending-card { text-align:center; }
+  .ending-card h1 { font-family:'Press Start 2P',monospace; font-size: 16px; color: var(--gold); margin-bottom: 14px; line-height:1.7; }
+  .ending-card p { color: var(--text-dim); font-size: 16px; max-width: 460px; margin: 0 auto 20px; line-height: 1.7; }
+
+  @media (max-width: 480px) { .q-text { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="topbar">
+    <div class="brand pixel-font" onclick="goHome()">MATHOPIA</div>
+    <div class="stat-bar">
+      <div class="pill">◆ <b id="xpLabel">0</b> XP</div>
+      <div class="pill">🏅 <b id="badgeLabel">0</b>/9</div>
+      <div class="pill clickable" onclick="openCustomize(false)">🎨 CUSTOMIZE</div>
+      <div class="pill clickable" onclick="openProfile()">👤 PROFILE</div>
+    </div>
+  </div>
+
+  <!-- INTRO STORY -->
+  <section class="screen active" id="screen-intro">
+    <div class="panel-box intro-card">
+      <div class="intro-skip"><button onclick="skipIntro()">Skip Intro ▶</button></div>
+      <div class="intro-panel" id="introPanel">
+        <div class="scene">🌌</div>
+        <p>Long ago, the land of numbers lived in perfect balance, spread across three peaceful kingdoms.</p>
+      </div>
+      <div class="intro-dots" id="introDots"></div>
+      <div class="intro-nav"><button class="btn" id="introNextBtn" onclick="nextIntroPanel()">CONTINUE ▶</button></div>
+    </div>
+  </section>
+
+  <!-- TITLE -->
+  <section class="screen" id="screen-title">
+    <div class="panel-box title-card">
+      <h1 class="pixel-font">WELCOME TO<br/>MATHOPIA</h1>
+      <div class="hero-preview" id="titleHeroSprite"></div>
+      <p class="lore">
+        Three kingdoms of numbers await — from the friendly fields of the Primary Kingdom to the
+        towering Secondary Summit. Every chapter is a quest, every problem a battle, every mistake
+        just a chance to try again. What shall we call you?
+      </p>
+      <div class="name-row">
+        <input id="heroNameInput" type="text" maxlength="16" placeholder="YOUR NAME" />
+      </div>
+      <div class="class-select">
+        <label>WHAT CLASS ARE YOU IN? (we'll suggest a starting kingdom)</label>
+        <select id="classSelect">
+          <option value="primary">Class 1–5 (Primary)</option>
+          <option value="middle">Class 6–8 (Middle)</option>
+          <option value="secondary">Class 9–10 (Secondary)</option>
+          <option value="all">Not sure / a bit of everything</option>
+        </select>
+      </div>
+      <button class="btn" onclick="openCustomize(true)">ENTER MATHOPIA</button>
+    </div>
+  </section>
+
+  <!-- CUSTOMIZE -->
+  <section class="screen" id="screen-customize">
+    <div class="panel-box customize-card">
+      <h1 class="pixel-font">CUSTOMIZE YOUR HERO</h1>
+      <div class="custom-preview" id="customPreview"></div>
+
+      <div class="custom-row">
+        <div class="clabel">Skin Tone</div>
+        <div class="swatch-row" id="skinSwatches"></div>
+      </div>
+      <div class="custom-row">
+        <div class="clabel">Hair Color</div>
+        <div class="swatch-row" id="hairSwatches"></div>
+      </div>
+      <div class="custom-row">
+        <div class="clabel">Armor Color</div>
+        <div class="swatch-row" id="armorSwatches"></div>
+      </div>
+
+      <button class="btn" onclick="confirmCustomize()">CONFIRM & CONTINUE</button>
+    </div>
+  </section>
+
+  <!-- WORLD MAP -->
+  <section class="screen" id="screen-map">
+    <div class="map-greet">
+      <h2 class="pixel-font" id="mapGreet">HERO</h2>
+      <p>Pick a kingdom. Master all chapters — including their guardians — to unlock the Grand Examiner.</p>
+    </div>
+    <div class="kingdoms">
+      <button class="kingdom-card" style="--k-accent:var(--track-primary)" onclick="openKingdom('primary')">
+        <div class="kicon">🏰</div>
+        <h3>PRIMARY KINGDOM</h3>
+        <p>Addition, subtraction, and times tables — the friendly foothills of math.</p>
+        <div class="kprog-row" id="kprog-primary"></div>
+      </button>
+      <button class="kingdom-card" style="--k-accent:var(--track-middle)" onclick="openKingdom('middle')">
+        <div class="kicon">🌉</div>
+        <h3>MIDDLE REALMS</h3>
+        <p>Fractions, decimals, and integers — where numbers get trickier.</p>
+        <div class="kprog-row" id="kprog-middle"></div>
+      </button>
+      <button class="kingdom-card" style="--k-accent:var(--track-secondary)" onclick="openKingdom('secondary')">
+        <div class="kicon">🗻</div>
+        <h3>SECONDARY SUMMIT</h3>
+        <p>Algebra, percentages, and ratios — the peak of the journey.</p>
+        <div class="kprog-row" id="kprog-secondary"></div>
+      </button>
+    </div>
+    <button class="examiner-card" id="examinerCard" onclick="tryExaminer()">
+      <div class="kicon">👁️</div>
+      <h3>THE GRAND EXAMINER</h3>
+      <p id="examinerHint">Master all 9 chapters across all 3 kingdoms to unlock this final challenge.</p>
+    </button>
+  </section>
+
+  <!-- KINGDOM (chapter list) -->
+  <section class="screen" id="screen-kingdom">
+    <div class="kingdom-header">
+      <div class="tag pixel-font" id="kingdomTag">KINGDOM</div>
+      <h2 id="kingdomTitle">PRIMARY KINGDOM</h2>
+      <p id="kingdomLore"></p>
+    </div>
+    <div class="chapters" id="chapterCards"></div>
+    <div class="action-row"><button class="btn ghost" onclick="showScreen('screen-map')">← WORLD MAP</button></div>
+  </section>
+
+  <!-- CHAPTER PATH -->
+  <section class="screen" id="screen-realm">
+    <div class="realm-header">
+      <div class="tag pixel-font" id="realmTag">CHAPTER</div>
+      <h2 id="realmTitle">ADDITION KINGDOM</h2>
+      <p class="lore" id="realmLore"></p>
+    </div>
+    <div class="path" id="pathNodes"></div>
+    <div class="briefing-box">
+      <div class="lbl">LESSON BRIEFING</div>
+      <div class="txt" id="briefingText">A slime blocks the path with a simple sum.</div>
+    </div>
+    <div class="action-row">
+      <button class="btn ghost" id="backToKingdomBtn">← BACK</button>
+      <button class="btn" id="startBattleBtn">START LESSON</button>
+    </div>
+  </section>
+
+  <!-- BATTLE -->
+  <section class="screen" id="screen-battle">
+    <div class="battle-field">
+      <div class="combo-badge">STREAK <b id="comboLabel">0</b></div>
+      <div class="battle-row">
+        <div class="enemy-side">
+          <div class="name pixel-font" id="enemyName">SLIME</div>
+          <div class="sprite-wrap" id="enemySprite"></div>
+          <div class="hpbar-track"><div class="hpbar-fill" id="enemyHpFill"></div></div>
+        </div>
+        <div class="hero-side">
+          <div class="hpbar-track"><div class="hpbar-fill" id="heroHpFill"></div></div>
+          <div class="sprite-wrap" id="heroSprite"></div>
+          <div class="name pixel-font" id="heroName">HERO</div>
+        </div>
+      </div>
+      <div class="encounter-line" id="encounterLine">A slime wobbles closer...</div>
+    </div>
+    <div class="dialogue-box">
+      <div class="q-label">SOLVE TO ATTACK — QUESTION <span id="qIndexLabel">1</span>/<span id="qTotalLabel">5</span></div>
+      <div class="q-text" id="qText">?</div>
+      <div class="spell-menu" id="spellMenu"></div>
+      <div class="feedback-line" id="feedbackLine"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="panel-box result">
+      <div class="icon" id="resultIcon">⚔️</div>
+      <div class="stars" id="resultStars">☆☆☆</div>
+      <h2 id="resultTitle">VICTORY</h2>
+      <p id="resultText">The foe dissolves into shards of light.</p>
+      <div class="result-actions">
+        <button class="btn ghost" onclick="showScreen('screen-map')">WORLD MAP</button>
+        <button class="btn ghost" id="retryBtn">RETRY</button>
+        <button class="btn" id="nextBtn" style="display:none;">NEXT</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="screen-profile">
+    <div class="profile-header">
+      <h2 id="profileName">HERO</h2>
+      <p style="color:var(--text-dim); font-size:14px;">Your journey through Mathopia so far.</p>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><b id="profXp">0</b><span>Total XP</span></div>
+      <div class="profile-stat"><b id="profBadges">0</b><span>Badges earned</span></div>
+      <div class="profile-stat"><b id="profStars">0</b><span>Stars / 135</span></div>
+    </div>
+    <div class="badge-grid" id="badgeGrid"></div>
+    <div class="action-row"><button class="btn ghost" onclick="showScreen('screen-map')">← WORLD MAP</button></div>
+  </section>
+
+  <!-- ENDING -->
+  <section class="screen" id="screen-ending">
+    <div class="panel-box ending-card">
+      <div class="hero-preview" id="endingSprite"></div>
+      <h1>YOU ARE A MATH MASTER OF MATHOPIA</h1>
+      <p>
+        The Grand Examiner has no more questions left to ask. Every kingdom, every chapter, every
+        guardian — all mastered. Numbers hold no more mysteries for you here.
+      </p>
+      <button class="btn" onclick="showScreen('screen-map')">RETURN TO THE MAP</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* =========================================================
+   PIXEL SPRITE RENDERER
+   ========================================================= */
+const PALETTE = {
+  '.': null,
+  '0': 'var(--p-black)', '1': 'var(--p-white)', '2': 'var(--p-skin)', '3': 'var(--p-hair)',
+  '4': 'var(--p-blue)', '5': 'var(--p-goldc)', '6': 'var(--p-red)', '7': 'var(--p-teal)',
+  '8': 'var(--p-gray)', '9': 'var(--p-purple)', 'a': 'var(--p-glow)', 'b': 'var(--p-darkred)',
+  'c': 'var(--p-armor2)', 'g': 'var(--p-green)', 'h': 'var(--p-cape)'
+};
+
+function renderSprite(el, grid, pixelSize) {
+  const shadows = [];
+  grid.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+      const color = PALETTE[ch];
+      if (!color) return;
+      shadows.push(`${x * pixelSize}px ${y * pixelSize}px 0 0 ${color}`);
+    });
+  });
+  el.style.width = pixelSize + 'px';
+  el.style.height = pixelSize + 'px';
+  el.style.background = 'transparent';
+  el.style.boxShadow = shadows.join(',');
+  const cols = Math.max(...grid.map(r => r.length));
+  const rows = grid.length;
+  if (el.parentElement) {
+    el.parentElement.style.width = (cols * pixelSize) + 'px';
+    el.parentElement.style.height = (rows * pixelSize) + 'px';
+    el.parentElement.style.position = 'relative';
+  }
+}
+
+const SPRITES = {
+  heroFrontIdle: [
+    "...0000...","3.055550.3",".05511550.",".05100150.","..0222220.",".05555550.",
+    "004444440c","0c444444c0","0c454454c0","..0cccc0..","..08880...","..0.0.0..."
+  ],
+  slime: [
+    "..gggg..","0gggggg0","g0g11g0g","gg1gg1gg","gggggggg",".gggggg.","..gg.gg."
+  ],
+  imp: [
+    "..6..6..",".600006.","6011110.","6010010.","6111116.",".600006.","..6666..",".6.66.6."
+  ],
+  wraith: [
+    "..0770..",".077770.","0711117.","0710017.","0711117.",".070070.","..0..0.."
+  ],
+  bat: [
+    ".9...9.","990.099","09.9.90","0999990",".0111 0",".0.0.0."
+  ].map(r => r.replace(' ','0')),
+  golem: [
+    ".088880.","0888888.","0819918.","0888888.","8888888",".8.88.8.",".0.00.0."
+  ],
+  voidlord: [
+    "..0aaa0a0..",".099999990.","099aaaaa990","09a9aa9a990","0999aa99990",
+    ".099999990.","0.999999.0.","09.9999.90.",".0.9999.0..","..0.99.0..."
+  ]
+};
+
+/* =========================================================
+   CHAPTER + TRACK DATA
+   ========================================================= */
+const TRACKS = {
+  primary:   { title: 'PRIMARY KINGDOM',   accentVar: '--track-primary',   chapters: ['add','sub','mult'] },
+  middle:    { title: 'MIDDLE REALMS',     accentVar: '--track-middle',    chapters: ['frac','dec','int'] },
+  secondary: { title: 'SECONDARY SUMMIT',  accentVar: '--track-secondary', chapters: ['alg','pct','rat'] }
+};
+
+const CHAPTERS = {
+  add: {
+    title: 'ADDITION KINGDOM', tag: 'CHAPTER I', track: 'primary',
+    lore: 'Friendly fields where numbers learn to combine.',
+    sprite: 'slime', enemyName: 'SLIME', gen: 'add',
+    stageNames: ['Sunny field','Two-digit hill','Carry bridge','Slime swamp','Boss: Sum Slime King'],
+    briefings: [
+      'A small slime asks a simple sum.',
+      'The hill grows numbers a little bigger.',
+      "Carrying digits? Don't worry, take your time.",
+      'The swamp slimes team up with trickier sums.',
+      'The Sum Slime King brings the biggest numbers yet.'
+    ],
+    boss: 'the Sum Slime King'
+  },
+  sub: {
+    title: 'SUBTRACTION SWAMP', tag: 'CHAPTER II', track: 'primary',
+    lore: 'A soggy swamp where numbers shrink instead of grow.',
+    sprite: 'slime', enemyName: 'SWAMP SLIME', gen: 'sub',
+    stageNames: ['Shallow marsh','Borrow bog','Muddy path','Deep swamp','Boss: Minus Slime King'],
+    briefings: [
+      'Take away a few and see what remains.',
+      'Sometimes you need to borrow — that\'s okay!',
+      'The mud makes the numbers stickier (bigger).',
+      'Deep swamp slimes subtract with bigger numbers.',
+      'The Minus Slime King challenges your best subtraction.'
+    ],
+    boss: 'the Minus Slime King'
+  },
+  mult: {
+    title: 'MULTIPLICATION MOUNTAIN', tag: 'CHAPTER III', track: 'primary',
+    lore: 'A jagged peak where times-table imps guard every ledge.',
+    sprite: 'imp', enemyName: 'IMP', gen: 'mult',
+    stageNames: ['Rocky path','Rope bridge','Icy ledge','Imp gate','Boss: Imp Lord'],
+    briefings: [
+      'A small imp blocks the rocky path with a riddle.',
+      'The rope bridge sways — answer quickly to cross.',
+      'Ice crackles underfoot on the icy ledge.',
+      'The imp gate demands three riddles solved.',
+      'The Imp Lord brings the toughest tables of all.'
+    ],
+    boss: 'the Imp Lord'
+  },
+  frac: {
+    title: 'FRACTION FOREST', tag: 'CHAPTER IV', track: 'middle',
+    lore: 'A forest where every path splits in two.',
+    sprite: 'wraith', enemyName: 'WRAITH', gen: 'frac',
+    stageNames: ['Split trail','Twin wraiths','Hollow tree','Wraith circle','Boss: Shard Queen'],
+    briefings: [
+      'Two wraiths argue over which piece is bigger.',
+      'Twin wraiths test your sense of fair shares.',
+      'A hollow tree hides fractions that need combining.',
+      'A circle of wraiths tests your simplifying skill.',
+      'The Shard Queen reforms from a thousand broken pieces.'
+    ],
+    boss: 'the Shard Queen'
+  },
+  dec: {
+    title: 'DECIMAL DUNES', tag: 'CHAPTER V', track: 'middle',
+    lore: 'Shifting sands where every number hides a tiny point.',
+    sprite: 'bat', enemyName: 'SAND BAT', gen: 'dec',
+    stageNames: ['Dune edge','Rounding oasis','Sandstorm','Bat colony','Boss: Point Phantom'],
+    briefings: [
+      'Round this number to the nearest whole.',
+      'The oasis tests simple decimal addition.',
+      'A sandstorm of subtraction swirls in.',
+      'A colony of bats multiplies decimals at you.',
+      'The Point Phantom hides the trickiest decimals yet.'
+    ],
+    boss: 'the Point Phantom'
+  },
+  int: {
+    title: 'INTEGER ISLE', tag: 'CHAPTER VI', track: 'middle',
+    lore: 'A cold island where numbers can dip below zero.',
+    sprite: 'bat', enemyName: 'FROST BAT', gen: 'int',
+    stageNames: ['Icy shore','Negative cove','Frost cave','Bat roost','Boss: Zero Wraith'],
+    briefings: [
+      'Add a positive and a negative — mind the sign.',
+      'Subtracting negatives feels strange at first.',
+      'The frost cave multiplies signed numbers.',
+      'A roost of bats mixes it all together.',
+      'The Zero Wraith bends numbers below zero and back.'
+    ],
+    boss: 'the Zero Wraith'
+  },
+  alg: {
+    title: 'ALGEBRA ARENA', tag: 'CHAPTER VII', track: 'secondary',
+    lore: 'An ancient arena where riddle-keepers hide numbers behind x.',
+    sprite: 'golem', enemyName: 'GOLEM', gen: 'alg',
+    stageNames: ['Arena gate','First duel','Twin riddles','Champion pit','Boss: Rune King'],
+    briefings: [
+      'A golem hides a number behind x. Find it.',
+      'Solve for x before the sand runs out.',
+      'Two-part riddles now — undo the trick to find x.',
+      'The champion pit demands sharper solving.',
+      'The Rune King himself challenges your algebra.'
+    ],
+    boss: 'the Rune King'
+  },
+  pct: {
+    title: 'PERCENTAGE PEAK', tag: 'CHAPTER VIII', track: 'secondary',
+    lore: 'A steep climb where every step is measured out of a hundred.',
+    sprite: 'golem', enemyName: 'STONE SENTRY', gen: 'pct',
+    stageNames: ['Base camp','Quarter climb','Ridge line','Storm wall','Boss: The Hundred Keeper'],
+    briefings: [
+      'Find 10% of the given number.',
+      'Now try quarters and halves.',
+      'General percentages test your ridge footing.',
+      'A storm of percentage increases blows in.',
+      'The Hundred Keeper asks you to work backwards from a percentage.'
+    ],
+    boss: 'the Hundred Keeper'
+  },
+  rat: {
+    title: 'RATIO RIDGE', tag: 'CHAPTER IX', track: 'secondary',
+    lore: 'A rugged ridge where everything must be compared fairly.',
+    sprite: 'golem', enemyName: 'RIDGE GOLEM', gen: 'rat',
+    stageNames: ['Simplify slope','Proportion pass','Ridge divide','Compare cliff','Boss: The Balance Keeper'],
+    briefings: [
+      'Simplify this ratio to its smallest form.',
+      'Solve a simple proportion.',
+      'Divide a total according to a ratio.',
+      'Compare two ratios — which is larger?',
+      'The Balance Keeper demands a scaled ratio.'
+    ],
+    boss: 'the Balance Keeper'
+  }
+};
+
+const CHAPTER_IDS = Object.keys(CHAPTERS);
+const QUESTIONS_PER_LEVEL = 5;
+const LEVELS = 5;
+
+function ls_get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function ls_set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+let state = {
+  heroName: ls_get('mx_hero') || '',
+  chapter: null, level: 1,
+  progress: JSON.parse(ls_get('mx_progress') || JSON.stringify(Object.fromEntries(CHAPTER_IDS.map(c=>[c,1])))),
+  xp: parseInt(ls_get('mx_xp') || '0', 10),
+  heroHp: 3, enemyHp: 5,
+  qIndex: 0, correctCount: 0, combo: 0, qTotal: 5
+};
+
+function totalStars(){
+  let t = 0;
+  CHAPTER_IDS.forEach(c => { for (let i=1;i<=LEVELS;i++) t += getStars(c,i); });
+  return t;
+}
+function totalBadges(){ return CHAPTER_IDS.filter(chapterMastered).length; }
+function chapterMastered(c){ return state.progress[c] > LEVELS; }
+function trackMastered(track){ return TRACKS[track].chapters.every(chapterMastered); }
+function allMastered(){ return CHAPTER_IDS.every(chapterMastered); }
+
+function refreshTop(){
+  document.getElementById('xpLabel').textContent = state.xp;
+  document.getElementById('badgeLabel').textContent = totalBadges();
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){ showScreen('screen-map'); renderMap(); }
+
+/* ---------- Character customization ---------- */
+const SKIN_OPTIONS  = ['#f2d9b8','#e8b98a','#c98a55','#8a5a35'];
+const HAIR_OPTIONS  = ['#5b3a29','#2a2320','#d9b35c','#a8442c'];
+const ARMOR_OPTIONS = [
+  { main:'#4a7fd6', shade:'#2f4f9e', cape:'#2a3a6e' },
+  { main:'#3fbf5a', shade:'#276b36', cape:'#1f4a2a' },
+  { main:'#e5453f', shade:'#8a221d', cape:'#6e1f1f' },
+  { main:'#9b4fe0', shade:'#5c2d86', cape:'#4a2568' }
+];
+let custom = {
+  skin: ls_get('mx_custom_skin') || SKIN_OPTIONS[0],
+  hair: ls_get('mx_custom_hair') || HAIR_OPTIONS[0],
+  armorIdx: parseInt(ls_get('mx_custom_armorIdx') || '0', 10)
+};
+function applyCustomVars(){
+  document.documentElement.style.setProperty('--p-skin', custom.skin);
+  document.documentElement.style.setProperty('--p-hair', custom.hair);
+  const a = ARMOR_OPTIONS[custom.armorIdx];
+  document.documentElement.style.setProperty('--p-blue', a.main);
+  document.documentElement.style.setProperty('--p-armor2', a.shade);
+  document.documentElement.style.setProperty('--p-cape', a.cape);
+}
+applyCustomVars();
+
+let customizeIsFirstTime = false;
+function openCustomize(isFirstTime){
+  customizeIsFirstTime = isFirstTime;
+  renderCustomizeSwatches();
+  renderCustomPreview();
+  showScreen('screen-customize');
+}
+function renderCustomizeSwatches(){
+  const skinWrap = document.getElementById('skinSwatches');
+  const hairWrap = document.getElementById('hairSwatches');
+  const armorWrap = document.getElementById('armorSwatches');
+  skinWrap.innerHTML = ''; hairWrap.innerHTML = ''; armorWrap.innerHTML = '';
+
+  SKIN_OPTIONS.forEach(color => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (custom.skin === color ? ' selected' : '');
+    s.style.background = color;
+    s.onclick = () => { custom.skin = color; renderCustomizeSwatches(); renderCustomPreview(); };
+    skinWrap.appendChild(s);
+  });
+  HAIR_OPTIONS.forEach(color => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (custom.hair === color ? ' selected' : '');
+    s.style.background = color;
+    s.onclick = () => { custom.hair = color; renderCustomizeSwatches(); renderCustomPreview(); };
+    hairWrap.appendChild(s);
+  });
+  ARMOR_OPTIONS.forEach((opt, i) => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (custom.armorIdx === i ? ' selected' : '');
+    s.style.background = opt.main;
+    s.onclick = () => { custom.armorIdx = i; renderCustomizeSwatches(); renderCustomPreview(); };
+    armorWrap.appendChild(s);
+  });
+}
+function renderCustomPreview(){
+  applyCustomVars();
+  const holder = document.getElementById('customPreview');
+  holder.innerHTML = '';
+  const inner = document.createElement('div');
+  holder.appendChild(inner);
+  renderSprite(inner, SPRITES.heroFrontIdle, 10);
+}
+function confirmCustomize(){
+  ls_set('mx_custom_skin', custom.skin);
+  ls_set('mx_custom_hair', custom.hair);
+  ls_set('mx_custom_armorIdx', String(custom.armorIdx));
+  applyCustomVars();
+  if (customizeIsFirstTime){
+    beginQuest();
+  } else {
+    showScreen('screen-map');
+    renderMap();
+  }
+}
+
+/* ---------- Intro story sequence ---------- */
+const INTRO_PANELS = [
+  { icon: '🌌', text: 'Long ago, the land of numbers lived in perfect balance, spread across three peaceful kingdoms.' },
+  { icon: '🌀', text: 'But confusion crept in from the edges of the map. Problems grew tangled. Answers hid themselves away.' },
+  { icon: '📜', text: 'Legends speak of a hero who can untangle any problem, armed with nothing but sharp wits and a steady hand.' },
+  { icon: '⚔️', text: 'That hero is needed now more than ever, to walk each kingdom, defeat its guardians, and restore what was lost.' },
+  { icon: '✨', text: 'That hero... is you.' }
+];
+let introIndex = 0;
+function renderIntroPanel(){
+  const p = INTRO_PANELS[introIndex];
+  const panel = document.getElementById('introPanel');
+  panel.innerHTML = `<div class="scene">${p.icon}</div><p>${p.text}</p>`;
+  const dots = document.getElementById('introDots');
+  dots.innerHTML = INTRO_PANELS.map((_, i) => `<span class="${i===introIndex?'on':''}"></span>`).join('');
+  document.getElementById('introNextBtn').textContent = introIndex === INTRO_PANELS.length - 1 ? 'BEGIN ▶' : 'CONTINUE ▶';
+}
+function nextIntroPanel(){
+  if (introIndex < INTRO_PANELS.length - 1){
+    introIndex++;
+    renderIntroPanel();
+  } else {
+    showScreen('screen-title');
+  }
+}
+function skipIntro(){ showScreen('screen-title'); }
+renderIntroPanel();
+
+/* ---------- Majestic sparkle cursor trail ---------- */
+let lastSparkleTime = 0;
+window.addEventListener('mousemove', (e) => {
+  const now = Date.now();
+  if (now - lastSparkleTime < 45) return;
+  lastSparkleTime = now;
+  const sparkle = document.createElement('div');
+  sparkle.className = 'sparkle-trail';
+  sparkle.style.left = (e.clientX - 3) + 'px';
+  sparkle.style.top = (e.clientY - 3) + 'px';
+  document.body.appendChild(sparkle);
+  setTimeout(() => sparkle.remove(), 700);
+});
+
+/* ---------- Title ---------- */
+(function initTitleSprite(){
+  const holder = document.getElementById('titleHeroSprite');
+  const inner = document.createElement('div');
+  holder.appendChild(inner);
+  renderSprite(inner, SPRITES.heroFrontIdle, 9);
+})();
+if (state.heroName) document.getElementById('heroNameInput').value = state.heroName;
+
+function beginQuest(){
+  const v = document.getElementById('heroNameInput').value.trim();
+  state.heroName = (v || 'Hero').toUpperCase();
+  ls_set('mx_hero', state.heroName);
+  document.getElementById('mapGreet').textContent = `WELCOME, ${state.heroName}`;
+  refreshTop();
+  renderMap();
+  showScreen('screen-map');
+}
+
+function getStars(chapter, level){
+  const raw = ls_get(`mx_stars_${chapter}_${level}`);
+  return raw ? parseInt(raw,10) : 0;
+}
+function setStars(chapter, level, stars){
+  if (stars > getStars(chapter, level)) ls_set(`mx_stars_${chapter}_${level}`, stars);
+}
+
+/* ---------- World map ---------- */
+function renderMap(){
+  ['primary','middle','secondary'].forEach(track => {
+    const wrap = document.getElementById(`kprog-${track}`);
+    wrap.innerHTML = '';
+    TRACKS[track].chapters.forEach(c => {
+      const chip = document.createElement('span');
+      chip.className = 'kprog-chip' + (chapterMastered(c) ? ' done' : '');
+      chip.textContent = CHAPTERS[c].title.split(' ')[0] + (chapterMastered(c) ? ' ✓' : ` ${state.progress[c]}/5`);
+      wrap.appendChild(chip);
+    });
+  });
+  const card = document.getElementById('examinerCard');
+  const hint = document.getElementById('examinerHint');
+  const unlocked = allMastered();
+  card.classList.toggle('locked', !unlocked);
+  hint.textContent = unlocked
+    ? 'Every kingdom is mastered. The Grand Examiner is the last challenge.'
+    : 'Master all 9 chapters across all 3 kingdoms to unlock this final challenge.';
+  refreshTop();
+}
+
+function tryExaminer(){ if (allMastered()) startExaminerBattle(); }
+
+/* ---------- Kingdom (chapter list) ---------- */
+let currentTrack = null;
+function openKingdom(track){
+  currentTrack = track;
+  const T = TRACKS[track];
+  document.getElementById('kingdomTag').textContent = 'KINGDOM';
+  document.getElementById('kingdomTitle').textContent = T.title;
+  document.getElementById('kingdomLore').textContent = 'Choose a chapter to begin its quest.';
+  const wrap = document.getElementById('chapterCards');
+  wrap.innerHTML = '';
+  T.chapters.forEach(cid => {
+    const C = CHAPTERS[cid];
+    const unlocked = state.progress[cid];
+    const mastered = chapterMastered(cid);
+    let starSum = 0; for (let i=1;i<=LEVELS;i++) starSum += getStars(cid,i);
+    const btn = document.createElement('button');
+    btn.className = 'chapter-card';
+    btn.innerHTML = `
+      ${mastered ? '<span class="mastered-flag">MASTERED</span><br/>' : ''}
+      <div class="chapter-icon">${chapterEmoji(cid)}</div>
+      <h3>${C.title}</h3>
+      <p>${C.lore}</p>
+      <div class="cprog"><span>${mastered ? 'All 5 lessons cleared' : `Lesson ${unlocked} of 5`}</span><span class="st">${starSum>0 ? '★'.repeat(Math.min(3,Math.round(starSum/5))) : ''}</span></div>
+    `;
+    btn.addEventListener('click', () => openChapter(cid));
+    wrap.appendChild(btn);
+  });
+  showScreen('screen-kingdom');
+}
+function chapterEmoji(cid){
+  return { add:'➕', sub:'➖', mult:'✖️', frac:'🔺', dec:'🔢', int:'❄️', alg:'🗿', pct:'🧗', rat:'⚖️' }[cid] || '📘';
+}
+
+/* ---------- Chapter path ---------- */
+let currentChapter = null, selectedLevel = 1;
+function openChapter(cid){
+  currentChapter = cid;
+  state.chapter = cid;
+  const C = CHAPTERS[cid];
+  document.getElementById('realmTag').textContent = C.tag;
+  document.getElementById('realmTitle').textContent = C.title;
+  document.getElementById('realmLore').textContent = C.lore;
+  document.getElementById('backToKingdomBtn').onclick = () => openKingdom(C.track);
+  renderPath();
+  showScreen('screen-realm');
+}
+function renderPath(){
+  const unlocked = state.progress[currentChapter];
+  const C = CHAPTERS[currentChapter];
+  const wrap = document.getElementById('pathNodes');
+  wrap.innerHTML = '';
+  for (let i=1;i<=LEVELS;i++){
+    const node = document.createElement('div');
+    node.className = 'node' + (i===LEVELS ? ' boss' : '');
+    if (i < unlocked) node.classList.add('done');
+    if (i === unlocked) node.classList.add('current');
+    const stars = getStars(currentChapter, i);
+    node.innerHTML = `
+      <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+      <div class="circ">${i < unlocked ? '✓' : (i===LEVELS ? '☠' : i)}</div>
+      <div class="nm">${C.stageNames[i-1]}</div>
+    `;
+    if (i <= unlocked){
+      node.style.cursor = 'pointer';
+      node.addEventListener('click', () => selectLevel(i));
+    } else { node.style.opacity = '0.4'; }
+    wrap.appendChild(node);
+  }
+  selectLevel(Math.min(unlocked, LEVELS));
+}
+function selectLevel(level){
+  selectedLevel = level;
+  const C = CHAPTERS[currentChapter];
+  document.getElementById('briefingText').textContent = C.briefings[level-1];
+  document.getElementById('startBattleBtn').textContent = level === LEVELS ? `FIGHT ${C.boss.toUpperCase()}` : 'START LESSON';
+}
+document.getElementById('startBattleBtn').addEventListener('click', () => startBattle(selectedLevel));
+
+/* =========================================================
+   QUESTION GENERATORS
+   ========================================================= */
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
+function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+
+function generateQuestion(gen, level){
+  switch(gen){
+    case 'add': return genAdd(level);
+    case 'sub': return genSub(level);
+    case 'mult': return genMult(level);
+    case 'frac': return genFrac(level);
+    case 'dec': return genDec(level);
+    case 'int': return genInt(level);
+    case 'alg': return genAlgebra(level);
+    case 'pct': return genPct(level);
+    case 'rat': return genRat(level);
+  }
+}
+
+function genAdd(level){
+  const ranges = [[1,9,1,9],[10,50,1,9],[10,50,10,50],[20,90,20,90],[100,500,10,90]];
+  const [alo,ahi,blo,bhi] = ranges[level-1];
+  const a = rand(alo,ahi), b = rand(blo,bhi);
+  return { text: `${a} + ${b} = ?`, answer: a+b, options: distractors(a+b, level) };
+}
+function genSub(level){
+  const ranges = [[5,18,1,9],[20,60,1,20],[30,90,10,40],[50,99,10,60],[100,300,10,90]];
+  const [alo,ahi,blo,bhi] = ranges[level-1];
+  const a = rand(alo,ahi), b = Math.min(rand(blo,bhi), a);
+  return { text: `${a} − ${b} = ?`, answer: a-b, options: distractors(a-b, level) };
+}
+function genMult(level){
+  const ranges = [[2,5],[3,8],[4,10],[6,12],[8,15]];
+  const [lo,hi] = ranges[level-1];
+  const a = rand(lo,hi), b = rand(lo,hi);
+  return { text: `${a} × ${b} = ?`, answer: a*b, options: distractors(a*b, level) };
+}
+function genFrac(level){
+  if (level <= 2){
+    const d1 = rand(2,4+level), n1 = rand(1,d1-1);
+    let d2 = rand(2,4+level), n2 = rand(1,d2-1);
+    if (n1/d1 === n2/d2){ d2 += 1; n2 = rand(1,d2-1); }
+    const bigger = (n1/d1) > (n2/d2) ? `${n1}/${d1}` : `${n2}/${d2}`;
+    return { text: `Bigger: ${n1}/${d1} or ${n2}/${d2}?`, answer: bigger, options: shuffle([`${n1}/${d1}`,`${n2}/${d2}`]) };
+  } else if (level <= 4){
+    const d = rand(4,8);
+    const n1 = rand(1,d-1), n2 = rand(1,d-n1);
+    const sumN = n1+n2, g = gcd(sumN,d);
+    const answer = g>1 ? `${sumN/g}/${d/g}` : `${sumN}/${d}`;
+    return { text: `${n1}/${d} + ${n2}/${d} = ?`, answer, options: fracDistractors(sumN,d,answer) };
+  } else {
+    const base = rand(2,6), mult = rand(2,4);
+    const n = base*mult, d = (base+rand(1,3))*mult;
+    const g = gcd(n,d);
+    const answer = `${n/g}/${d/g}`;
+    return { text: `Simplify: ${n}/${d}`, answer, options: fracDistractors(n,d,answer) };
+  }
+}
+function fracDistractors(n,d,answer){
+  const opts = new Set([answer, `${n}/${d}`]);
+  while (opts.size < 4){
+    const fn = Math.max(1, n - rand(-2,2));
+    const fd = Math.max(fn+1, d - rand(-2,2));
+    opts.add(`${fn}/${fd}`);
+  }
+  return shuffle([...opts].slice(0,4));
+}
+function genDec(level){
+  if (level === 1){
+    const whole = rand(1,20), tenth = rand(1,9);
+    const val = whole + tenth/10;
+    const answer = tenth >= 5 ? whole+1 : whole;
+    return { text: `Round ${val.toFixed(1)} to the nearest whole number`, answer, options: distractors(answer, 1) };
+  }
+  if (level === 2){
+    const a = (rand(10,50)/10), b = (rand(10,50)/10);
+    const answer = Math.round((a+b)*10)/10;
+    return { text: `${a.toFixed(1)} + ${b.toFixed(1)} = ?`, answer: answer.toFixed(1), options: decDistractors(answer) };
+  }
+  if (level === 3){
+    const a = rand(100,900)/100, b = rand(100,900)/100;
+    const answer = Math.round((a+b)*100)/100;
+    return { text: `${a.toFixed(2)} + ${b.toFixed(2)} = ?`, answer: answer.toFixed(2), options: decDistractors(answer, 2) };
+  }
+  if (level === 4){
+    const a = rand(50,99)/10, b = rand(10,49)/10;
+    const answer = Math.round((a-b)*10)/10;
+    return { text: `${a.toFixed(1)} − ${b.toFixed(1)} = ?`, answer: answer.toFixed(1), options: decDistractors(answer) };
+  }
+  const a = rand(10,90)/10, b = rand(2,9);
+  const answer = Math.round(a*b*10)/10;
+  return { text: `${a.toFixed(1)} × ${b} = ?`, answer: answer.toFixed(1), options: decDistractors(answer) };
+}
+function decDistractors(answer, places){
+  places = places || 1;
+  const base = parseFloat(answer);
+  const opts = new Set([answer.toFixed ? answer.toFixed(places) : String(answer)]);
+  while (opts.size < 4){
+    const delta = (rand(-15,15) / Math.pow(10, places-1)) || 0.1;
+    const v = Math.round((base + delta) * Math.pow(10,places)) / Math.pow(10,places);
+    if (v >= 0) opts.add(v.toFixed(places));
+  }
+  return shuffle([...opts].slice(0,4));
+}
+function genInt(level){
+  if (level === 1){
+    const a = rand(-10,10), b = rand(-10,10);
+    return { text: `${a} + (${b}) = ?`, answer: a+b, options: distractors(a+b, 3) };
+  }
+  if (level === 2){
+    const a = rand(-15,15), b = rand(-15,15);
+    return { text: `${a} − (${b}) = ?`, answer: a-b, options: distractors(a-b, 3) };
+  }
+  if (level === 3){
+    const a = rand(-9,9)||1, b = rand(-9,9)||1;
+    return { text: `${a} × ${b} = ?`, answer: a*b, options: distractors(a*b, 4) };
+  }
+  if (level === 4){
+    const a = rand(-12,12), b = rand(-12,12), c = rand(-10,10);
+    return { text: `${a} + ${b} − (${c}) = ?`, answer: a+b-c, options: distractors(a+b-c, 4) };
+  }
+  const a = -rand(2,12), b = -rand(2,12);
+  return { text: `${a} × ${b} = ?`, answer: a*b, options: distractors(a*b, 5) };
+}
+function genAlgebra(level){
+  if (level === 1){ const x=rand(1,12), b=rand(1,20); return { text:`x + ${b} = ${x+b}`, answer:x, options:distractors(x,level) }; }
+  if (level === 2){ const x=rand(1,12), b=rand(1,15); return { text:`x − ${b} = ${x-b}`, answer:x, options:distractors(x,level) }; }
+  if (level === 3){ const a=rand(2,9), x=rand(1,10); return { text:`${a}x = ${a*x}`, answer:x, options:distractors(x,level) }; }
+  if (level === 4){ const a=rand(2,6), x=rand(1,10), b=rand(1,15); return { text:`${a}x + ${b} = ${a*x+b}`, answer:x, options:distractors(x,level) }; }
+  const a=rand(2,6), x=rand(1,8), b=rand(1,10);
+  return { text:`${a}x − ${b} = ${a*x-b}`, answer:x, options:distractors(x,level) };
+}
+function genPct(level){
+  if (level === 1){ const n = rand(2,20)*10; const answer = n*0.1; return { text:`10% of ${n} = ?`, answer, options: distractors(answer, 1) }; }
+  if (level === 2){ const n = rand(2,25)*4; const pct = [25,50][rand(0,1)]; const answer = n*pct/100; return { text:`${pct}% of ${n} = ?`, answer, options: distractors(answer, 2) }; }
+  if (level === 3){ const n = rand(4,40)*5; const pct = rand(1,19)*5; const answer = Math.round(n*pct/100); return { text:`${pct}% of ${n} = ?`, answer, options: distractors(answer, 3) }; }
+  if (level === 4){ const n = rand(20,100); const pct = rand(1,9)*10; const answer = Math.round(n*(1+pct/100)); return { text:`${n} increased by ${pct}% = ?`, answer, options: distractors(answer, 4) }; }
+  const result = rand(4,40); const pct = [10,20,25,50][rand(0,3)]; const original = Math.round(result / (pct/100));
+  return { text:`${pct}% of a number is ${result}. What is the number?`, answer: original, options: distractors(original, 5) };
+}
+function genRat(level){
+  if (level === 1){
+    const g = rand(2,6), a = rand(1,5)*g, b = rand(1,5)*g;
+    const gg = gcd(a,b);
+    const answer = `${a/gg}:${b/gg}`;
+    return { text: `Simplify the ratio ${a}:${b}`, answer, options: ratDistractors(a/gg, b/gg, answer) };
+  }
+  if (level === 2){
+    const a = rand(1,6), b = rand(1,6), scale = rand(2,6);
+    const given = a*scale;
+    const answer = b*scale;
+    return { text: `${a}:${b} = ${given}:?`, answer, options: distractors(answer, 2) };
+  }
+  if (level === 3){
+    const a = rand(1,5), b = rand(1,5), scale = rand(2,8);
+    const total = (a+b)*scale;
+    const answer = a*scale;
+    return { text: `Split ${total} in the ratio ${a}:${b}. What is the smaller share?`, answer, options: distractors(answer, 3) };
+  }
+  if (level === 4){
+    const a1=rand(1,6), b1=rand(1,6);
+    let a2=rand(1,6), b2=rand(1,6);
+    if (a1/b1 === a2/b2){ a2 += 1; }
+    const bigger = (a1/b1) > (a2/b2) ? `${a1}:${b1}` : `${a2}:${b2}`;
+    return { text: `Which ratio is bigger: ${a1}:${b1} or ${a2}:${b2}?`, answer: bigger, options: shuffle([`${a1}:${b1}`,`${a2}:${b2}`]) };
+  }
+  const a = rand(1,6), b = rand(1,6), scale = rand(2,9);
+  const answer = `${a*scale}:${b*scale}`;
+  return { text: `Scale the ratio ${a}:${b} so the first term is ${a*scale}`, answer, options: ratDistractors(a*scale, b*scale, answer) };
+}
+function ratDistractors(a,b,answer){
+  const opts = new Set([answer, `${a}:${b}`]);
+  while (opts.size < 4){
+    const fa = Math.max(1, a + rand(-2,2));
+    const fb = Math.max(1, b + rand(-2,2));
+    opts.add(`${fa}:${fb}`);
+  }
+  return shuffle([...opts].slice(0,4));
+}
+function distractors(answer, level){
+  const spread = 2 + Number(level || 2);
+  const opts = new Set([answer]);
+  let guard = 0;
+  while (opts.size < 4 && guard < 50){
+    guard++;
+    const d = Math.round(Number(answer) + rand(-spread, spread));
+    if (d !== Number(answer)) opts.add(d);
+  }
+  return shuffle([...opts]);
+}
+
+/* ---------- Battle engine ---------- */
+let isBossBattle = false, isExaminerBattle = false;
+
+function startBattle(level){
+  state.level = level;
+  state.heroHp = 3;
+  state.enemyHp = 5;
+  state.qIndex = 0;
+  state.correctCount = 0;
+  state.combo = 0;
+  state.qTotal = QUESTIONS_PER_LEVEL;
+  isBossBattle = (level === LEVELS);
+  isExaminerBattle = false;
+
+  const C = CHAPTERS[state.chapter];
+  document.getElementById('enemyName').textContent = isBossBattle ? C.boss.toUpperCase() : C.enemyName;
+  document.getElementById('heroName').textContent = state.heroName;
+  document.getElementById('qTotalLabel').textContent = state.qTotal;
+  document.getElementById('encounterLine').textContent = isBossBattle ? `${C.boss} rises to challenge you!` : `A ${C.enemyName.toLowerCase()} appears!`;
+  document.getElementById('encounterLine').className = 'encounter-line' + (isBossBattle ? ' boss' : '');
+
+  mountSprite('heroSprite', SPRITES.heroFrontIdle, 7);
+  mountSprite('enemySprite', SPRITES[C.sprite], 7);
+
+  updateHpBars();
+  nextQuestion();
+  showScreen('screen-battle');
+}
+
+function startExaminerBattle(){
+  state.heroHp = 3;
+  state.enemyHp = 6;
+  state.qIndex = 0;
+  state.correctCount = 0;
+  state.combo = 0;
+  state.qTotal = 6;
+  isBossBattle = true;
+  isExaminerBattle = true;
+
+  document.getElementById('enemyName').textContent = 'THE GRAND EXAMINER';
+  document.getElementById('heroName').textContent = state.heroName;
+  document.getElementById('qTotalLabel').textContent = state.qTotal;
+  document.getElementById('encounterLine').textContent = 'The Grand Examiner draws from every kingdom!';
+  document.getElementById('encounterLine').className = 'encounter-line boss';
+
+  mountSprite('heroSprite', SPRITES.heroFrontIdle, 7);
+  mountSprite('enemySprite', SPRITES.voidlord, 6);
+
+  updateHpBars();
+  nextQuestion();
+  showScreen('screen-battle');
+}
+
+function mountSprite(holderId, grid, pixelSize){
+  const holder = document.getElementById(holderId);
+  holder.innerHTML = '';
+  const inner = document.createElement('div');
+  holder.appendChild(inner);
+  renderSprite(inner, grid, pixelSize);
+}
+
+function updateHpBars(){
+  const heroPct = Math.max(0, (state.heroHp/3)*100);
+  const enemyMax = isExaminerBattle ? 6 : 5;
+  const enemyPct = Math.max(0, (state.enemyHp/enemyMax)*100);
+  const hf = document.getElementById('heroHpFill');
+  const ef = document.getElementById('enemyHpFill');
+  hf.style.width = heroPct + '%';
+  ef.style.width = enemyPct + '%';
+  hf.style.background = heroPct <= 33 ? 'var(--hp-bad)' : heroPct <= 66 ? 'var(--hp-mid)' : 'var(--hp-good)';
+  ef.style.background = enemyPct <= 33 ? 'var(--hp-bad)' : enemyPct <= 66 ? 'var(--hp-mid)' : 'var(--hp-good)';
+}
+
+function pickExaminerQuestion(){
+  const cid = CHAPTER_IDS[rand(0, CHAPTER_IDS.length-1)];
+  const level = rand(3,5);
+  return generateQuestion(CHAPTERS[cid].gen, level);
+}
+
+function nextQuestion(){
+  if (state.qIndex >= state.qTotal || state.heroHp <= 0 || state.enemyHp <= 0){
+    return finishBattle();
+  }
+  const q = isExaminerBattle ? pickExaminerQuestion() : generateQuestion(CHAPTERS[state.chapter].gen, state.level);
+  state._answer = q.answer;
+
+  document.getElementById('qIndexLabel').textContent = state.qIndex + 1;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('feedbackLine').textContent = '';
+  document.getElementById('comboLabel').textContent = state.combo;
+
+  const menu = document.getElementById('spellMenu');
+  menu.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'spell-btn';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => handleAnswer(btn, opt, q.answer));
+    menu.appendChild(btn);
+  });
+}
+
+function handleAnswer(btn, chosen, correct){
+  document.querySelectorAll('.spell-btn').forEach(b => b.disabled = true);
+  const isCorrect = String(chosen) === String(correct);
+
+  if (isCorrect){
+    btn.classList.add('correct');
+    state.correctCount++;
+    state.combo++;
+    state.enemyHp = Math.max(0, state.enemyHp - 1);
+    const xpEarned = 4 + Math.min(state.combo,5)*2;
+    state.xp += xpEarned;
+    ls_set('mx_xp', String(state.xp));
+    refreshTop();
+    document.getElementById('feedbackLine').textContent = state.combo >= 3
+      ? `STREAK x${state.combo}! Critical hit! +${xpEarned} XP`
+      : `Correct! +${xpEarned} XP`;
+  } else {
+    btn.classList.add('wrong');
+    state.combo = 0;
+    state.heroHp = Math.max(0, state.heroHp - 1);
+    document.querySelectorAll('.spell-btn').forEach(b => { if (b.textContent == String(correct)) b.classList.add('correct'); });
+    document.getElementById('feedbackLine').textContent = `Not quite — the answer was ${correct}.`;
+  }
+  updateHpBars();
+  state.qIndex++;
+  setTimeout(nextQuestion, 950);
+}
+
+function finishBattle(){
+  const won = state.enemyHp <= 0 && state.heroHp > 0;
+  const stars = won && state.heroHp === 3 ? 3 : won && state.heroHp === 2 ? 2 : won ? 1 : 0;
+
+  if (isExaminerBattle){
+    document.getElementById('resultIcon').textContent = won ? '👑' : '📚';
+    document.getElementById('resultStars').textContent = won ? '★★★' : '—';
+    document.getElementById('resultTitle').textContent = won ? 'EXAMINER DEFEATED' : 'NOT QUITE YET';
+    document.getElementById('resultText').textContent = won
+      ? 'You have answered every kind of question Mathopia can throw at you.'
+      : 'The Examiner is tough. Review your weakest chapters and try again.';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('retryBtn').style.display = 'inline-block';
+    document.getElementById('retryBtn').onclick = () => startExaminerBattle();
+    showScreen('screen-result');
+    if (won) setTimeout(() => {
+      mountSprite('endingSprite', SPRITES.heroFrontIdle, 9);
+      showScreen('screen-ending');
+    }, 1600);
+    return;
+  }
+
+  document.getElementById('retryBtn').style.display = 'inline-block';
+
+  if (won){
+    setStars(state.chapter, state.level, stars);
+    if (state.progress[state.chapter] === state.level){
+      state.progress[state.chapter] = state.level + 1;
+      ls_set('mx_progress', JSON.stringify(state.progress));
+    }
+  }
+
+  const C = CHAPTERS[state.chapter];
+  document.getElementById('resultIcon').textContent = won ? (isBossBattle ? '👑' : '⚔️') : '💤';
+  document.getElementById('resultStars').textContent = stars > 0 ? '★'.repeat(stars)+'☆'.repeat(3-stars) : '—';
+  document.getElementById('resultTitle').textContent = won
+    ? (isBossBattle ? `${C.boss.toUpperCase()} DEFEATED` : 'LESSON COMPLETE')
+    : 'TRY AGAIN';
+  document.getElementById('resultText').textContent = won
+    ? (isBossBattle ? `${C.title} is mastered! A badge has been added to your profile.` : `Nicely solved — on to the next lesson.`)
+    : `You need to win before your hearts run out. Review and try again.`;
+
+  const nextBtn = document.getElementById('nextBtn');
+  if (won && state.level < LEVELS){
+    nextBtn.style.display = 'inline-block';
+    nextBtn.textContent = (state.level+1 === LEVELS) ? 'FACE BOSS' : 'NEXT LESSON';
+    nextBtn.onclick = () => startBattle(state.level+1);
+  } else {
+    nextBtn.style.display = 'none';
+  }
+  document.getElementById('retryBtn').onclick = () => startBattle(state.level);
+  showScreen('screen-result');
+}
+
+/* ---------- Profile ---------- */
+function openProfile(){
+  document.getElementById('profileName').textContent = `${state.heroName || 'HERO'}'S PROFILE`;
+  document.getElementById('profXp').textContent = state.xp;
+  document.getElementById('profBadges').textContent = totalBadges();
+  document.getElementById('profStars').textContent = totalStars();
+  const grid = document.getElementById('badgeGrid');
+  grid.innerHTML = '';
+  CHAPTER_IDS.forEach(cid => {
+    const C = CHAPTERS[cid];
+    const earned = chapterMastered(cid);
+    const tile = document.createElement('div');
+    tile.className = 'badge-tile' + (earned ? ' earned' : ' locked');
+    tile.innerHTML = `<span class="bicon">${chapterEmoji(cid)}</span>${C.title}`;
+    grid.appendChild(tile);
+  });
+  showScreen('screen-profile');
+}
+</script>
+</body>
+</html>
