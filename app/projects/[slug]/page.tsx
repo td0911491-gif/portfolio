@@ -10,8 +10,9 @@ export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
 }
 
-export default function ProjectPage({ params }: { params: { slug: string } }) {
-  const project = projects.find((p) => p.slug === params.slug);
+export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const project = projects.find((p) => p.slug === slug);
   if (!project) return notFound();
 
   const related = projects.filter((p) => p.slug !== project.slug && p.category === project.category).slice(0, 3);
@@ -58,7 +59,7 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
 
       <div className="mt-6 flex flex-wrap gap-3">
         {project.github && (
-          <a
+          
             href={project.github}
             target="_blank"
             rel="noopener noreferrer"
@@ -68,7 +69,7 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
           </a>
         )}
         {project.liveDemo && (
-          <a
+          
             href={project.liveDemo}
             target="_blank"
             rel="noopener noreferrer"
@@ -81,55 +82,3 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
 
       {project.gallery && project.gallery.length > 0 && (
         <div className="mt-10">
-          <MediaGallery items={project.gallery} />
-        </div>
-      )}
-
-      <div className="mt-12 space-y-10">
-        {sections.map((s) => (
-          <div key={s.heading}>
-            <h2 className="mb-3 text-lg font-bold text-ink">
-              <span className="text-red">#</span> {s.heading}
-            </h2>
-            {s.body && <p className="text-sm leading-relaxed text-ink-secondary">{s.body}</p>}
-            {s.list && (
-              <ul className="space-y-2">
-                {s.list.map((item, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-ink-secondary">
-                    <span className="text-red">›</span> {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {(project.myRole || (project.teamMembers && project.teamMembers.length > 0)) && (
-        <div className="mt-10 rounded border border-border bg-bg-elevated p-5 text-sm">
-          {project.myRole && (
-            <p className="text-ink-secondary">
-              <span className="font-semibold text-ink">My role:</span> {project.myRole}
-            </p>
-          )}
-          {project.teamMembers && project.teamMembers.length > 0 && (
-            <p className="mt-1 text-ink-secondary">
-              <span className="font-semibold text-ink">Team:</span> {project.teamMembers.join(", ")}
-            </p>
-          )}
-        </div>
-      )}
-
-      {related.length > 0 && (
-        <div className="mt-16">
-          <h2 className="mb-4 text-lg font-bold text-ink">Related projects</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((p, i) => (
-              <ProjectCard key={p.slug} project={p} index={i} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
