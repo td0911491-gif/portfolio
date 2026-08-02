@@ -82,6 +82,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-            {projects.length === 0
-              ? "No projects yet. Add one to data/projects.ts and it'll show up here automatically."
-              : `No projects match "${query}".`}
