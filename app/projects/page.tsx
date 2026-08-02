@@ -70,3 +70,18 @@ export default function ProjectsPage() {
             {projects.length === 0
               ? "No projects yet. Add one to data/projects.ts and it'll show up here automatically."
               : `No projects match "${query}".`}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((p, i) => (
+            <ProjectCard key={p.slug} project={p} index={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+            {projects.length === 0
+              ? "No projects yet. Add one to data/projects.ts and it'll show up here automatically."
+              : `No projects match "${query}".`}
