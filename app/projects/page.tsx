@@ -32,8 +32,8 @@ export default function ProjectsPage() {
       </p>
       <h1 className="text-3xl font-bold tracking-tight text-ink">Projects</h1>
       <p className="mt-2 max-w-xl text-sm text-ink-secondary">
-        // eslint-disable-next-line react/no-unescaped-entities
-        <p>{"Here it&apos;s a project about X"}</p>
+        Everything here is pulled straight from a single data file — new work shows up
+        the moment it&apos;s added.
       </p>
 
       {projects.length > 0 && (
@@ -70,15 +70,3 @@ export default function ProjectsPage() {
             {projects.length === 0
               ? "No projects yet. Add one to data/projects.ts and it'll show up here automatically."
               : `No projects match "${query}".`}
-          </p>
-        </div>
-      ) : (
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p, i) => (
-            <ProjectCard key={p.slug} project={p} index={i} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
