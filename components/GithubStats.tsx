@@ -8,8 +8,7 @@ import { githubUsername } from "@/data/social";
 // Placeholder numbers until a real GitHub username is set in data/social.ts.
 // Swap `isLive` to true once githubUsername is real — the component then
 // renders the live GitHub Readme Stats card instead of the placeholder grid.
-const isLive = githubUsername !== "your-username";
-
+const isLive = true; 
 const placeholderStats = [
   { label: "Public Repos", value: "—", icon: GitBranch },
   { label: "Contributions", value: "—", icon: GitCommitHorizontal },
