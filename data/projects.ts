@@ -21,6 +21,15 @@ import { Project } from "@/types";
 // }
 // ---------------------------------------------------------------------------
 
-export const projects: Project[] = [];
+{
+  slug: "mathopia",
+  name: "Mathopia",
+  category: "Game",
+  shortDescription: "An interactive HTML math game to test and improve problem-solving skills.",
+  technologies: ["HTML5", "CSS3", "JavaScript"],
+  demoUrl: "/mathopia.html",
+  github: "https://github.com/td0911491-gif/portfolio",
+  featured: true
+},;
 
 export const featuredProjects = projects.filter((p) => p.featured);
