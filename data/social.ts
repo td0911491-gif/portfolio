@@ -7,8 +7,7 @@ export const socialLinks: SocialLink[] = [
   { label: "LinkedIn", href: "https://www.linkedin.com/in/tamoghna-dhar-5a8773394", icon: "linkedin" },
   { label: "LeetCode", href: "https://leetcode.com/u/td0911491-gif/", icon: "leetcode" },
   { label: "Codeforces", href: "https://codeforces.com/profile/td0911491", icon: "codeforces" },
-  { label: "Discord", href: "#", icon: "discord" }
-];
+10{ label: "Instagram", href: "https://instagram.com/td0911491", icon: "instagram" }];
 
 // Used by the GitHub stats section. Swap in your real username to go live —
 // the component is already wired to accept it.
