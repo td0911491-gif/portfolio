@@ -1,4 +1,4 @@
-import { Github, Linkedin, Mail, MessageCircle, Code2 } from "lucide-react";
+import { Github, Linkedin, Mail, Instagram, Code2 } from "lucide-react";
 import { SocialLink } from "@/types";
 
 export default function SocialIcon({
@@ -15,8 +15,8 @@ export default function SocialIcon({
       return <Linkedin size={size} />;
     case "mail":
       return <Mail size={size} />;
-    case "discord":
-      return <MessageCircle size={size} />;
+    case "instagram":
+      return <Instagram size={size} />;
     case "leetcode":
     case "codeforces":
     default:
