@@ -13,7 +13,21 @@ export const projects: Project[] = [
     featured: true,
     status: "completed",
     tags: ["game", "javascript", "html5"]
+  },
+  {
+    slug: "cognidbg",
+    name: "CogniDBG",
+    category: "Developer Tool",
+    shortDescription: "A step-by-step code debugger with real JavaScript execution and AI trace analysis.",
+    longDescription: "CogniDBG is an interactive step-by-step code execution visualizer and debugger featuring real JavaScript execution, Python AI tracing, live variable state tracking, and AI assistance hints.",
+    technologies: ["JavaScript", "HTML5", "CSS3", "AI Tracing"],
+    liveDemo: "#", // Add live URL or link to local html file if available
+    github: "https://github.com/td0911491-gif/portfolio", // Replace with CogniDBG repo URL if hosted separately
+    featured: true,
+    status: "completed",
+    tags: ["debugger", "javascript", "developer-tools", "ai"]
   }
 ];
 
 export const featuredProjects = projects.filter((p) => p.featured);
+
