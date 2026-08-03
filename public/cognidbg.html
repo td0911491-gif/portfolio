@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CogniDBG — step debugger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.11.3/acorn.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0E14;
+    --panel:#12161F;
+    --panel-alt:#171C27;
+    --panel-raised:#1B2130;
+    --border:#232937;
+    --border-soft:#1B2130;
+    --text:#E4E7EC;
+    --text-dim:#8B93A7;
+    --text-faint:#535B70;
+    --amber:#E8A33D;
+    --amber-dim:#7A5A28;
+    --violet:#9B8CFF;
+    --violet-dim:#4A4180;
+    --red:#FF6B6B;
+    --green:#5FD97A;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --sans:'Space Grotesk', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(232,163,61,0.06), transparent),
+      radial-gradient(ellipse 700px 400px at 100% 0%, rgba(155,140,255,0.05), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+  ::selection{background:var(--amber-dim); color:#fff;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:6px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; gap:16px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-right:auto;}
+  .brand .dot{
+    width:10px; height:10px; border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 3px rgba(232,163,61,0.15), 0 0 10px rgba(232,163,61,0.5);
+  }
+  .brand h1{
+    font-size:16px; margin:0; letter-spacing:0.14em; font-weight:700;
+    text-transform:uppercase;
+  }
+  .brand span.sub{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    letter-spacing:0.04em; margin-left:4px;
+  }
+  .lang-toggle{
+    display:flex; background:var(--panel); border:1px solid var(--border);
+    border-radius:8px; overflow:hidden;
+  }
+  .lang-toggle button{
+    font-family:var(--mono); font-size:12.5px; font-weight:600;
+    background:transparent; border:none; color:var(--text-dim);
+    padding:8px 16px; cursor:pointer; transition:.15s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .lang-toggle button.active{background:var(--panel-raised); color:var(--amber);}
+  .lang-toggle button:not(.active):hover{color:var(--text);}
+  .badge{
+    font-family:var(--mono); font-size:9.5px; padding:2px 6px; border-radius:4px;
+    letter-spacing:0.04em; font-weight:600;
+  }
+  .badge.real{background:rgba(95,217,122,0.12); color:var(--green); border:1px solid rgba(95,217,122,0.25);}
+  .badge.ai{background:rgba(155,140,255,0.12); color:var(--violet); border:1px solid rgba(155,140,255,0.25);}
+
+  button.iconbtn{
+    background:var(--panel); border:1px solid var(--border); color:var(--text-dim);
+    border-radius:8px; padding:8px 12px; font-family:var(--sans); font-size:12.5px;
+    font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;
+    transition:.15s;
+  }
+  button.iconbtn:hover{border-color:var(--text-faint); color:var(--text);}
+
+  /* ---------- key popover ---------- */
+  .keywrap{position:relative;}
+  .keypop{
+    position:absolute; top:calc(100% + 8px); right:0; width:340px;
+    background:var(--panel-raised); border:1px solid var(--border); border-radius:12px;
+    padding:16px; z-index:50; box-shadow:0 20px 40px rgba(0,0,0,0.5);
+    display:none;
+  }
+  .keypop.open{display:block;}
+  .keypop h3{margin:0 0 6px; font-size:13px; letter-spacing:0.03em;}
+  .keypop p{margin:0 0 10px; font-size:11.5px; line-height:1.5; color:var(--text-dim);}
+  .keypop input{
+    width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:9px 10px; border-radius:7px; font-family:var(--mono); font-size:12px; margin-bottom:8px;
+  }
+  .keypop .status{font-size:11px; font-family:var(--mono);}
+  .keypop .status.ok{color:var(--green);}
+  .keypop .status.empty{color:var(--text-faint);}
+
+  /* ---------- main layout ---------- */
+  main{
+    flex:1; display:grid; grid-template-columns:1.15fr 1fr;
+    gap:1px; background:var(--border);
+    min-height:0;
+  }
+  @media (max-width:880px){ main{grid-template-columns:1fr;} }
+
+  .pane{background:var(--bg); display:flex; flex-direction:column; min-height:0;}
+  .pane-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px; border-bottom:1px solid var(--border);
+  }
+  .pane-head .tt{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    letter-spacing:0.08em; text-transform:uppercase; display:flex; align-items:center; gap:8px;
+  }
+
+  /* ---- code editor / viewer ---- */
+  .editor-wrap{flex:1; position:relative; min-height:260px; overflow:auto;}
+  textarea#code{
+    width:100%; height:100%; resize:none; border:none; outline:none;
+    background:transparent; color:var(--text); font-family:var(--mono);
+    font-size:13.5px; line-height:1.65; padding:16px 16px 16px 56px;
+    tab-size:2; white-space:pre; position:absolute; inset:0;
+  }
+  .linegutter{
+    position:absolute; left:0; top:0; bottom:0; width:44px;
+    padding:16px 0; text-align:right; font-family:var(--mono); font-size:13.5px;
+    line-height:1.65; color:var(--text-faint); user-select:none; pointer-events:none;
+    border-right:1px solid var(--border-soft);
+  }
+  .linegutter div{padding-right:12px;}
+
+  .code-view{padding:16px; font-family:var(--mono); font-size:13.5px; line-height:1.65;}
+  .code-line{display:flex; border-radius:4px; padding:0 8px; margin:0 -8px;}
+  .code-line.current{
+    background:linear-gradient(90deg, rgba(232,163,61,0.16), rgba(232,163,61,0.04));
+    box-shadow:inset 3px 0 0 var(--amber);
+  }
+  .code-line .ln{width:34px; flex:none; text-align:right; margin-right:16px; color:var(--text-faint);}
+  .code-line.current .ln{color:var(--amber); font-weight:700;}
+  .code-line .src{white-space:pre-wrap; word-break:break-word;}
+  .tok-kw{color:var(--violet);}
+  .tok-str{color:var(--green);}
+  .tok-num{color:var(--amber);}
+  .tok-com{color:var(--text-faint); font-style:italic;}
+
+  /* ---- transport / recorder tape ---- */
+  .recorder{
+    border-top:1px solid var(--border); background:var(--panel);
+    padding:14px 18px 16px;
+  }
+  .recorder-row{display:flex; align-items:center; gap:14px;}
+  .transport{display:flex; gap:6px;}
+  .tbtn{
+    width:34px; height:34px; border-radius:8px; background:var(--panel-raised);
+    border:1px solid var(--border); color:var(--text); display:flex; align-items:center;
+    justify-content:center; cursor:pointer; transition:.15s;
+  }
+  .tbtn:hover{border-color:var(--amber); color:var(--amber);}
+  .tbtn:disabled{opacity:.35; cursor:not-allowed;}
+  .tbtn:disabled:hover{border-color:var(--border); color:var(--text);}
+  .tbtn.play{background:var(--amber); border-color:var(--amber); color:#1a1204;}
+  .tbtn.play:hover{color:#1a1204; opacity:.9;}
+
+  .odometer{
+    font-family:var(--mono); background:#05060a; border:1px solid var(--border);
+    border-radius:7px; padding:7px 12px; font-size:13px; color:var(--amber);
+    letter-spacing:0.04em; min-width:92px; text-align:center;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .odometer .of{color:var(--text-faint);}
+
+  .tape{flex:1; position:relative; height:34px; cursor:pointer;}
+  .tape .track{
+    position:absolute; left:0; right:0; top:50%; height:2px; transform:translateY(-50%);
+    background:repeating-linear-gradient(90deg, var(--border) 0 6px, transparent 6px 12px);
+  }
+  .tape .ticks{position:absolute; inset:0;}
+  .tape .tick{
+    position:absolute; top:50%; width:2px; height:8px; background:var(--border-soft);
+    transform:translate(-50%,-50%);
+  }
+  .tape .tick.err{background:var(--red); height:12px;}
+  .tape .head{
+    position:absolute; top:50%; width:14px; height:14px; border-radius:50%;
+    background:var(--amber); transform:translate(-50%,-50%);
+    box-shadow:0 0 0 4px rgba(232,163,61,0.18), 0 0 14px rgba(232,163,61,0.5);
+    transition:left .08s linear;
+  }
+  select#speed{
+    background:var(--panel-raised); border:1px solid var(--border); color:var(--text-dim);
+    font-family:var(--mono); font-size:11.5px; border-radius:7px; padding:7px 8px;
+  }
+  .status-line{
+    margin-top:10px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim);
+    min-height:16px; display:flex; align-items:center; gap:8px;
+  }
+  .status-line.err{color:var(--red);}
+  .status-line.ok{color:var(--green);}
+  .spinner{
+    width:11px;height:11px;border-radius:50%;border:2px solid var(--border);
+    border-top-color:var(--amber); animation:spin .7s linear infinite; display:inline-block;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---- right pane tabs ---- */
+  .tabs{display:flex; gap:2px; padding:0 12px; border-bottom:1px solid var(--border); background:var(--panel-alt);}
+  .tab{
+    padding:10px 14px; font-family:var(--mono); font-size:11.5px; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--text-dim); cursor:pointer; border-bottom:2px solid transparent;
+    display:flex; align-items:center; gap:6px;
+  }
+  .tab.active{color:var(--amber); border-bottom-color:var(--amber);}
+  .tab .count{
+    background:var(--panel-raised); border-radius:10px; padding:1px 6px; font-size:10px; color:var(--text-dim);
+  }
+  .tabpanel{display:none; flex:1; min-height:0; overflow:auto; padding:16px;}
+  .tabpanel.active{display:block;}
+
+  .empty-hint{
+    color:var(--text-faint); font-size:12.5px; font-family:var(--mono); line-height:1.7;
+    padding:30px 10px; text-align:center;
+  }
+
+  table.vars{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px;}
+  table.vars th{
+    text-align:left; color:var(--text-faint); font-weight:600; font-size:10.5px;
+    letter-spacing:0.06em; text-transform:uppercase; padding:4px 8px; border-bottom:1px solid var(--border);
+  }
+  table.vars td{padding:8px; border-bottom:1px solid var(--border-soft); vertical-align:top;}
+  table.vars tr.changed td{background:rgba(232,163,61,0.07);}
+  table.vars td.vname{color:var(--violet); font-weight:600; white-space:nowrap;}
+  table.vars td.vval{color:var(--text); word-break:break-all;}
+  .step-note{
+    font-size:12px; color:var(--text-dim); margin-bottom:12px; padding:10px 12px;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px; line-height:1.5;
+  }
+
+  .console-line{
+    font-family:var(--mono); font-size:12px; padding:5px 8px; border-bottom:1px solid var(--border-soft);
+    color:var(--text-dim);
+  }
+  .console-line .step-tag{color:var(--text-faint); margin-right:8px;}
+
+  /* ---- hints panel ---- */
+  .hint-controls{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  textarea#problem{
+    width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:10px; font-family:var(--sans); font-size:12.5px; line-height:1.5;
+    min-height:56px; resize:vertical; margin-bottom:10px;
+  }
+  .hint-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:14px; margin-bottom:10px; position:relative; overflow:hidden;
+  }
+  .hint-card .hnum{
+    font-family:var(--mono); font-size:10.5px; color:var(--violet); letter-spacing:0.08em;
+    text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:6px;
+  }
+  .hint-card .htext{font-size:13px; line-height:1.6; color:var(--text);}
+  .hint-card.locked .htext{
+    filter:blur(5px); user-select:none; color:var(--text-faint);
+  }
+  .hint-card.locked{cursor:pointer;}
+  .hint-card.locked:hover{border-color:var(--violet-dim);}
+  .hint-card .lockrow{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:11px; color:var(--violet); gap:6px; background:rgba(18,22,31,0.35);
+  }
+
+  .primary-btn{
+    background:linear-gradient(180deg, #F0AE4D, #D6912A); border:none; color:#1a1204;
+    font-family:var(--sans); font-weight:700; font-size:12.5px; padding:9px 16px;
+    border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:7px;
+    box-shadow:0 4px 14px rgba(232,163,61,0.25);
+  }
+  .primary-btn:hover{filter:brightness(1.06);}
+  .primary-btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+  .primary-btn.violet{
+    background:linear-gradient(180deg, #A99BFF, #8172E8); box-shadow:0 4px 14px rgba(155,140,255,0.25); color:#100c2b;
+  }
+  .ghost-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    font-family:var(--sans); font-size:12px; padding:8px 14px; border-radius:8px; cursor:pointer;
+  }
+  .ghost-btn:hover{border-color:var(--text-faint); color:var(--text);}
+
+  svg.icn{width:14px; height:14px; flex:none;}
+
+  /* ---- assistant chat ---- */
+  #panel-assistant.active{display:flex; flex-direction:column; padding:14px 16px 16px;}
+  .assist-toprow{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
+  .assist-log{
+    flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px;
+    padding-right:2px; min-height:120px;
+  }
+  .msg{display:flex; gap:10px; max-width:92%;}
+  .msg.user{align-self:flex-end; flex-direction:row-reverse;}
+  .msg .avatar{
+    width:26px; height:26px; border-radius:7px; flex:none; display:flex; align-items:center;
+    justify-content:center; font-family:var(--mono); font-size:10px; font-weight:700;
+  }
+  .msg.assistant .avatar{background:rgba(155,140,255,0.14); color:var(--violet); border:1px solid rgba(155,140,255,0.3);}
+  .msg.user .avatar{background:rgba(232,163,61,0.14); color:var(--amber); border:1px solid rgba(232,163,61,0.3);}
+  .msg .bubble{
+    border-radius:10px; padding:10px 13px; font-size:12.8px; line-height:1.6;
+    border:1px solid var(--border);
+  }
+  .msg.assistant .bubble{background:var(--panel); border-color:var(--border);}
+  .msg.user .bubble{background:var(--panel-raised); border-color:var(--border);}
+  .msg .bubble code{
+    font-family:var(--mono); background:#05060a; padding:1px 5px; border-radius:4px; font-size:11.8px;
+  }
+  .msg .bubble pre{
+    font-family:var(--mono); background:#05060a; border:1px solid var(--border); border-radius:7px;
+    padding:10px; overflow-x:auto; font-size:11.8px; margin:8px 0; line-height:1.5;
+  }
+  .msg.thinking .bubble{color:var(--text-dim); display:flex; align-items:center; gap:8px;}
+
+  .assist-inputrow{display:flex; gap:8px; margin-top:12px; align-items:flex-end;}
+  #assist-input{
+    flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:10px 12px; font-family:var(--sans); font-size:12.5px;
+    line-height:1.5; min-height:40px; max-height:120px; resize:vertical;
+  }
+  #assist-input:focus{outline:none; border-color:var(--violet-dim);}
+  #btn-assist-send{background:var(--violet); border-color:var(--violet); color:#100c2b;}
+  #btn-assist-send:hover{color:#100c2b; opacity:.9;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <h1>CogniDBG</h1>
+    <span class="sub">// step-by-step debugger</span>
+  </div>
+
+  <div class="lang-toggle">
+    <button id="btn-js" class="active">JavaScript <span class="badge real">real exec</span></button>
+    <button id="btn-py">Python <span class="badge ai">AI trace</span></button>
+  </div>
+
+  <button class="iconbtn" id="btn-reset-code">
+    <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+    Sample
+  </button>
+
+  <div class="keywrap">
+    <button class="iconbtn" id="btn-key">
+      <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.5 12.5 19 4l2 2-2 2 2 2-3 3-2-2-3.5 3.5"/></svg>
+      API key
+    </button>
+    <div class="keypop" id="keypop">
+      <h3>Groq API key</h3>
+      <p>Used to power the Python tracer and AI hints (via Groq's fast inference API). Sent directly from this tab — never persisted to disk. You'll re-enter it if you reload the page.</p>
+      <input type="password" id="apikey" placeholder="gsk_...">
+      <div class="status empty" id="keystatus">No key set — Python trace &amp; hints disabled</div>
+      <p style="margin-top:12px;">Groq's API blocks direct browser calls (CORS). If requests fail, deploy the tiny proxy below and paste its URL here — leave blank to call Groq directly (works only where CORS isn't enforced, e.g. some local setups).</p>
+      <input type="text" id="apiendpoint" placeholder="https://your-proxy.workers.dev (optional)">
+      <div class="status empty" id="endpointstatus">Calling Groq directly — will likely fail with a CORS error once deployed</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="pane">
+    <div class="pane-head">
+      <span class="tt" id="editor-title">
+        <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>
+        source — script.js
+      </span>
+      <button class="ghost-btn" id="btn-edit" style="display:none;">Edit code</button>
+    </div>
+    <div class="editor-wrap" id="editor-wrap">
+      <div class="linegutter" id="gutter"></div>
+      <textarea id="code" spellcheck="false"></textarea>
+      <div class="code-view" id="codeview" style="display:none;"></div>
+    </div>
+
+    <div class="recorder">
+      <div class="recorder-row">
+        <div class="transport">
+          <button class="tbtn" id="btn-first" title="First step" disabled>
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20 9 12l10-8v16ZM5 19V5"/></svg>
+          </button>
+          <button class="tbtn" id="btn-prev" title="Previous" disabled>
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <button class="tbtn play" id="btn-play" title="Play" disabled>
+            <svg class="icn" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="tbtn" id="btn-next" title="Next" disabled>
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <button class="tbtn" id="btn-last" title="Last step" disabled>
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8V4ZM19 5v14"/></svg>
+          </button>
+        </div>
+        <div class="odometer" id="odometer">— <span class="of">/ —</span></div>
+        <div class="tape" id="tape">
+          <div class="track"></div>
+          <div class="ticks" id="ticks"></div>
+          <div class="head" id="tapehead" style="left:0%"></div>
+        </div>
+        <select id="speed">
+          <option value="700">0.5×</option>
+          <option value="380" selected>1×</option>
+          <option value="180">2×</option>
+          <option value="70">4×</option>
+        </select>
+        <button class="primary-btn" id="btn-run">
+          <svg class="icn" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Run trace
+        </button>
+      </div>
+      <div class="status-line" id="status">Ready. Write or paste code, then Run trace.</div>
+    </div>
+  </section>
+
+  <section class="pane">
+    <div class="tabs">
+      <div class="tab active" data-tab="trace">Variables</div>
+      <div class="tab" data-tab="console">Console <span class="count" id="console-count">0</span></div>
+      <div class="tab" data-tab="hints">AI hints</div>
+      <div class="tab" data-tab="assistant">Assistant</div>
+    </div>
+
+    <div class="tabpanel active" id="panel-trace">
+      <div id="trace-empty" class="empty-hint">— no trace yet —<br>run your code to see live variable state per step</div>
+      <div id="trace-content" style="display:none;">
+        <div class="step-note" id="step-note"></div>
+        <table class="vars">
+          <thead><tr><th>Name</th><th>Value</th></tr></thead>
+          <tbody id="vars-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="panel-console">
+      <div id="console-empty" class="empty-hint">— console is empty —</div>
+      <div id="console-body"></div>
+    </div>
+
+    <div class="tabpanel" id="panel-hints">
+      <textarea id="problem" placeholder="Optional: paste the problem statement / prompt this code is meant to solve, for sharper hints."></textarea>
+      <div class="hint-controls">
+        <button class="primary-btn violet" id="btn-hints">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2ZM9 21h6"/></svg>
+          Generate hints
+        </button>
+      </div>
+      <div id="hints-empty" class="empty-hint">— no hints yet —<br>hints are progressive: vague first, more specific if you reveal further. never the full solution.</div>
+      <div id="hints-body"></div>
+    </div>
+
+    <div class="tabpanel" id="panel-assistant">
+      <div class="assist-toprow">
+        <button class="primary-btn violet" id="btn-diagnose">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 12.5 11 14l3.5-4M12 3a5 5 0 0 1 5 5c0 1-1 2-1 3.5V15a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-3.5C7 10 6 9 6 8a5 5 0 0 1 5-5ZM10 20h4"/></svg>
+          Diagnose current code
+        </button>
+        <button class="ghost-btn" id="btn-clear-chat">Clear chat</button>
+      </div>
+      <div class="assist-log" id="assist-log">
+        <div id="assist-empty" class="empty-hint">— ask CogniDBG anything about this code —<br>it reads what's in the editor (and the last trace error, if any) and tells you plainly what's wrong and how to fix it. no vague nudging — that's what the hints tab is for.</div>
+      </div>
+      <div class="assist-inputrow">
+        <textarea id="assist-input" placeholder="What's wrong with my code? (Shift+Enter for newline)"></textarea>
+        <button class="tbtn play" id="btn-assist-send" title="Send">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+
+/* ============================= constants / state ============================= */
+const SAMPLES = {
+  js: `// Two Sum — find indices of two numbers that add to target
+function twoSum(nums, target) {
+  const seen = {};
+  for (let i = 0; i < nums.length; i++) {
+    const need = target - nums[i];
+    if (seen[need] !== undefined) {
+      return [seen[need], i];
+    }
+    seen[nums[i]] = i;
+  }
+  return [-1, -1];
+}
+
+const result = twoSum([2, 7, 11, 15], 9);
+console.log("answer:", result);`,
+  py: `# Binary search over a sorted list
+def binary_search(arr, target):
+    lo, hi = 0, len(arr) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+
+nums = [1, 3, 5, 7, 9, 11, 13]
+print(binary_search(nums, 9))`
+};
+
+const state = {
+  lang: 'js',
+  apiKey: '',
+  apiEndpoint: '',
+  steps: [],           // [{line, vars:{name:strval}, note}]
+  consoleEntries: [],  // [{step, text}]
+  cur: 0,
+  playing: false,
+  playTimer: null,
+  hints: [],
+  hintsRevealed: 0,
+  errorStep: null,
+  assistantMessages: [] // [{role:'user'|'assistant', content}]
+};
+
+const $ = (id) => document.getElementById(id);
+
+/* ============================= editor / gutter ============================= */
+const codeEl = $('code');
+const gutterEl = $('gutter');
+const codeviewEl = $('codeview');
+const editorWrapEl = $('editor-wrap');
+
+function syncGutter(){
+  const lines = codeEl.value.split('\n').length;
+  let html = '';
+  for(let i=1;i<=lines;i++) html += `<div>${i}</div>`;
+  gutterEl.innerHTML = html;
+}
+codeEl.addEventListener('input', syncGutter);
+codeEl.addEventListener('scroll', ()=>{ gutterEl.scrollTop = codeEl.scrollTop; });
+
+function loadSample(lang){
+  codeEl.value = SAMPLES[lang];
+  syncGutter();
+}
+
+const KEYWORDS = {
+  js: ['function','return','if','else','for','while','do','let','const','var','break','continue','new','class','typeof','instanceof','of','in','true','false','null','undefined','try','catch','finally','throw','switch','case','default','this','async','await','yield','static','extends','super'],
+  py: ['def','return','if','elif','else','for','while','break','continue','import','from','as','class','try','except','finally','raise','with','lambda','not','and','or','in','is','None','True','False','pass','yield','global','nonlocal','del','assert']
+};
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlightLine(line, lang){
+  let s = escapeHtml(line);
+  // comments
+  const comRe = lang === 'py' ? /(#.*)$/ : /(\/\/.*)$/;
+  let comMatch = s.match(comRe);
+  let comPart = '';
+  if(comMatch){
+    comPart = `<span class="tok-com">${comMatch[1]}</span>`;
+    s = s.slice(0, comMatch.index);
+  }
+  // strings
+  s = s.replace(/('([^'\\]|\\.)*'|"([^"\\]|\\.)*"|`([^`\\]|\\.)*`)/g, m => `<span class="tok-str">${m}</span>`);
+  // numbers
+  s = s.replace(/\b(\d+\.?\d*)\b/g, m => `<span class="tok-num">${m}</span>`);
+  // keywords
+  const kws = KEYWORDS[lang] || [];
+  const kwRe = new RegExp('\\b(' + kws.join('|') + ')\\b', 'g');
+  s = s.replace(kwRe, m => `<span class="tok-kw">${m}</span>`);
+  return s + comPart;
+}
+
+function renderCodeView(currentLine){
+  const lines = codeEl.value.split('\n');
+  let html = '';
+  lines.forEach((line, idx) => {
+    const ln = idx + 1;
+    const cls = ln === currentLine ? 'code-line current' : 'code-line';
+    html += `<div class="${cls}" data-line="${ln}"><span class="ln">${ln}</span><span class="src">${highlightLine(line, state.lang) || ' '}</span></div>`;
+  });
+  codeviewEl.innerHTML = html;
+}
+
+function enterTraceMode(){
+  codeEl.style.display = 'none';
+  gutterEl.style.display = 'none';
+  codeviewEl.style.display = 'block';
+  $('btn-edit').style.display = 'inline-flex';
+}
+function exitTraceMode(){
+  codeEl.style.display = 'block';
+  gutterEl.style.display = 'block';
+  codeviewEl.style.display = 'none';
+  $('btn-edit').style.display = 'none';
+  resetTrace();
+}
+$('btn-edit').addEventListener('click', exitTraceMode);
+
+/* ============================= language toggle ============================= */
+$('btn-js').addEventListener('click', () => setLang('js'));
+$('btn-py').addEventListener('click', () => setLang('py'));
+
+function setLang(lang){
+  if(state.lang === lang) return;
+  state.lang = lang;
+  $('btn-js').classList.toggle('active', lang==='js');
+  $('btn-py').classList.toggle('active', lang==='py');
+  $('editor-title').innerHTML = (lang==='js'
+    ? `<svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg> source — script.js`
+    : `<svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg> source — script.py`);
+  loadSample(lang);
+  exitTraceMode();
+  setStatus(lang === 'py' && !state.apiKey ? 'Python tracing needs your Groq API key (top right).' : 'Ready. Write or paste code, then Run trace.', '');
+}
+
+$('btn-reset-code').addEventListener('click', () => { loadSample(state.lang); exitTraceMode(); });
+
+/* ============================= API key popover ============================= */
+$('btn-key').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('keypop').classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if(!$('keypop').contains(e.target) && e.target !== $('btn-key') && !$('btn-key').contains(e.target)){
+    $('keypop').classList.remove('open');
+  }
+});
+$('apikey').addEventListener('input', (e) => {
+  state.apiKey = e.target.value.trim();
+  const st = $('keystatus');
+  if(state.apiKey){
+    st.textContent = 'Key set for this session ✓';
+    st.className = 'status ok';
+  } else {
+    st.textContent = 'No key set — Python trace & hints disabled';
+    st.className = 'status empty';
+  }
+});
+$('apiendpoint').addEventListener('input', (e) => {
+  state.apiEndpoint = e.target.value.trim().replace(/\/$/, '');
+  const st = $('endpointstatus');
+  if(state.apiEndpoint){
+    st.textContent = 'Calling via your proxy ✓';
+    st.className = 'status ok';
+  } else {
+    st.textContent = 'Calling Groq directly — will likely fail with a CORS error once deployed';
+    st.className = 'status empty';
+  }
+});
+function groqUrl(){
+  return state.apiEndpoint ? state.apiEndpoint : 'https://api.groq.com/openai/v1/chat/completions';
+}
+
+/* ============================= status line ============================= */
+function setStatus(msg, cls, spin){
+  const el = $('status');
+  el.className = 'status-line' + (cls ? ' '+cls : '');
+  el.innerHTML = (spin ? '<span class="spinner"></span>' : '') + msg;
+}
+
+/* ============================= tabs ============================= */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    $('panel-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================= JS real-execution tracer ============================= */
+
+function extractPatternNames(node, out){
+  if(!node) return;
+  if(node.type === 'Identifier') out.add(node.name);
+  else if(node.type === 'ObjectPattern'){
+    node.properties.forEach(p => extractPatternNames(p.value || p.argument, out));
+  } else if(node.type === 'ArrayPattern'){
+    node.elements.forEach(el => extractPatternNames(el, out));
+  } else if(node.type === 'AssignmentPattern'){
+    extractPatternNames(node.left, out);
+  } else if(node.type === 'RestElement'){
+    extractPatternNames(node.argument, out);
+  }
+}
+
+function genericWalk(node, cb){
+  if(!node || typeof node !== 'object') return;
+  if(Array.isArray(node)){ node.forEach(n => genericWalk(n, cb)); return; }
+  if(typeof node.type === 'string') cb(node);
+  for(const key in node){
+    if(key==='type'||key==='loc'||key==='start'||key==='end'||key==='range') continue;
+    const val = node[key];
+    if(val && typeof val === 'object') genericWalk(val, cb);
+  }
+}
+
+function collectNames(ast){
+  const names = new Set();
+  genericWalk(ast, node => {
+    if(node.type === 'VariableDeclarator'){
+      extractPatternNames(node.id, names);
+    } else if(node.params){
+      node.params.forEach(p => extractPatternNames(p, names));
+      if(node.type === 'FunctionDeclaration' && node.id) names.add(node.id.name);
+    } else if(node.type === 'CatchClause' && node.param){
+      extractPatternNames(node.param, names);
+    } else if((node.type === 'ForInStatement' || node.type === 'ForOfStatement') && node.left && node.left.type === 'VariableDeclaration'){
+      node.left.declarations.forEach(d => extractPatternNames(d.id, names));
+    }
+  });
+  return Array.from(names).filter(n => n && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n));
+}
+
+function collectInsertionPoints(ast){
+  const points = [];
+  genericWalk(ast, node => {
+    if((node.type === 'Program' || node.type === 'BlockStatement') && Array.isArray(node.body)){
+      node.body.forEach(stmt => {
+        points.push({ pos: stmt.start, line: stmt.loc.start.line });
+      });
+    }
+  });
+  // final state snapshot at very end of program
+  if(ast.body && ast.body.length){
+    const last = ast.body[ast.body.length - 1];
+    points.push({ pos: ast.end, line: last.loc.end.line, isFinal:true });
+  }
+  return points;
+}
+
+function buildTraceSnippet(line, names, isFinal){
+  const body = names.map(n => `try{o[${JSON.stringify(n)}]=${n}}catch(e){}`).join('');
+  return `;__trace(${line},(function(){var o={};${body}return o;})()${isFinal?',true':''});`;
+}
+
+function instrumentJS(source, ast, names, points){
+  points.sort((a,b) => b.pos - a.pos); // descending, so splicing is safe
+  let out = source;
+  for(const p of points){
+    const snippet = buildTraceSnippet(p.line, names, p.isFinal);
+    out = out.slice(0, p.pos) + snippet + out.slice(p.pos);
+  }
+  return out;
+}
+
+function runJS(source){
+  state.steps = [];
+  state.consoleEntries = [];
+  state.errorStep = null;
+
+  let ast;
+  try{
+    ast = acorn.parse(source, { ecmaVersion: 2022, locations: true });
+  } catch(err){
+    setStatus('Syntax error: ' + err.message, 'err');
+    return false;
+  }
+
+  const names = collectNames(ast);
+  const points = collectInsertionPoints(ast);
+  const instrumented = instrumentJS(source, ast, names, points);
+
+  const MAX_STEPS = 3000;
+  let stepCount = 0;
+  const stepsLocal = [];
+  const consoleLocal = [];
+
+  function __trace(line, vars, isFinal){
+    stepCount++;
+    if(stepCount > MAX_STEPS){
+      throw new Error('STEP_LIMIT_EXCEEDED');
+    }
+    stepsLocal.push({ line, vars, note: isFinal ? 'Final program state.' : null });
+  }
+
+  const origLog = console.log;
+  console.log = function(...args){
+    const text = args.map(a => {
+      try{ return typeof a === 'string' ? a : JSON.stringify(a); }
+      catch(e){ return String(a); }
+    }).join(' ');
+    consoleLocal.push({ step: stepsLocal.length, text });
+  };
+
+  try{
+    const runner = new Function('__trace', `"use strict";\n${instrumented}\n`);
+    runner(__trace);
+    state.steps = stepsLocal;
+    state.consoleEntries = consoleLocal;
+    console.log = origLog;
+    return true;
+  } catch(err){
+    console.log = origLog;
+    state.steps = stepsLocal;
+    state.consoleEntries = consoleLocal;
+    if(err.message === 'STEP_LIMIT_EXCEEDED'){
+      state.steps.push({ line: null, vars:{}, note: `⚠ Stopped after ${MAX_STEPS} steps — likely an infinite loop.`, isError:true });
+    } else {
+      state.steps.push({ line: null, vars:{}, note: `⚠ Runtime error: ${err.message}`, isError:true });
+    }
+    state.errorStep = state.steps.length - 1;
+    return true;
+  }
+}
+
+/* ============================= Python AI tracer ============================= */
+
+const MODEL = 'openai/gpt-oss-120b'; // served on Groq's inference API
+
+async function callGroq(promptOrMessages, maxTokens){
+  const messages = Array.isArray(promptOrMessages)
+    ? promptOrMessages
+    : [{ role: 'user', content: promptOrMessages }];
+  let res;
+  try{
+    res = await fetch(groqUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens || 1000,
+        messages
+      })
+    });
+  } catch(networkErr){
+    if(!state.apiEndpoint){
+      throw new Error('Request blocked before reaching Groq — almost certainly CORS, since api.groq.com does not allow direct browser calls. Deploy the small proxy (see below) and paste its URL into the "API endpoint" field.');
+    }
+    throw new Error('Could not reach your proxy at "' + state.apiEndpoint + '" — check it is deployed and the URL is correct. (' + networkErr.message + ')');
+  }
+  if(!res.ok){
+    const errBody = await res.text();
+    throw new Error(`API error ${res.status}: ${errBody.slice(0,200)}`);
+  }
+  const data = await res.json();
+  const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if(!text) throw new Error('No text in API response');
+  return text;
+}
+
+function parseJSONLoose(text){
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```json\s*/i, '').replace(/^```\s*/,'').replace(/```\s*$/,'');
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if(start >= 0 && end > start) cleaned = cleaned.slice(start, end+1);
+  return JSON.parse(cleaned);
+}
+
+async function runPython(source){
+  state.steps = [];
+  state.consoleEntries = [];
+  state.errorStep = null;
+
+  const prompt = `You are a precise Python execution simulator. Simulate running this Python code exactly as CPython would, line by line, and report the trace as JSON only — no markdown fences, no prose before or after.
+
+Schema:
+{"steps":[{"line": <1-indexed source line number about to execute>, "vars": {"name":"short value as string"}, "note": "<=12 word plain description of what this line does"}], "error": "<string, or null if no exception>"}
+
+Rules:
+- Include every variable currently in scope at each step, with concise value strings (truncate long lists/strings to ~40 chars with …).
+- If there are loops, you may sample: include every step for the first 2 iterations, then a representative middle step, then the final iteration — but never exceed 18 total steps. Note when you sampled.
+- If the code raises an exception, stop the steps at the failing line and set "error" to a short description.
+- Keep "note" short. Keep "vars" values short. Output compact JSON, no extra whitespace, nothing outside the JSON object.
+
+Python code:
+${source}`;
+
+  const raw = await callGroq(prompt, 1000);
+  let parsed;
+  try{
+    parsed = parseJSONLoose(raw);
+  } catch(e){
+    throw new Error('Could not parse AI trace response as JSON.');
+  }
+  const steps = (parsed.steps || []).map(s => ({
+    line: s.line, vars: s.vars || {}, note: s.note || null
+  }));
+  if(parsed.error){
+    steps.push({ line: null, vars:{}, note: `⚠ ${parsed.error}`, isError:true });
+    state.errorStep = steps.length - 1;
+  }
+  state.steps = steps;
+  return true;
+}
+
+/* ============================= run trace orchestration ============================= */
+
+$('btn-run').addEventListener('click', async () => {
+  const source = codeEl.value;
+  if(!source.trim()){ setStatus('Nothing to run — write some code first.', 'err'); return; }
+
+  if(state.lang === 'py' && !state.apiKey){
+    setStatus('Add your Groq API key (top right) to trace Python.', 'err');
+    $('keypop').classList.add('open');
+    return;
+  }
+
+  $('btn-run').disabled = true;
+  setStatus(state.lang === 'js' ? 'Executing in-browser…' : 'Asking Claude to trace this…', '', true);
+
+  try{
+    let ok;
+    if(state.lang === 'js') ok = runJS(source);
+    else ok = await runPython(source);
+
+    if(ok && state.steps.length){
+      enterTraceMode();
+      state.cur = 0;
+      renderStep(0);
+      buildTape();
+      enableTransport(true);
+      setStatus(state.lang === 'js'
+        ? `Traced ${state.steps.length} step${state.steps.length===1?'':'s'} — real execution.`
+        : `Traced ${state.steps.length} step${state.steps.length===1?'':'s'} — AI-simulated.`, 'ok');
+    } else if(ok){
+      setStatus('Ran, but produced no traceable statements.', '');
+    }
+  } catch(err){
+    setStatus('Error: ' + err.message, 'err');
+  } finally{
+    $('btn-run').disabled = false;
+  }
+});
+
+/* ============================= step rendering ============================= */
+
+function enableTransport(on){
+  ['btn-first','btn-prev','btn-play','btn-next','btn-last'].forEach(id => $(id).disabled = !on);
+}
+
+function renderStep(i){
+  const step = state.steps[i];
+  if(!step) return;
+  state.cur = i;
+
+  $('odometer').innerHTML = `${String(i+1).padStart(3,'0')} <span class="of">/ ${String(state.steps.length).padStart(3,'0')}</span>`;
+
+  renderCodeView(step.line);
+  if(step.line){
+    const el = codeviewEl.querySelector(`[data-line="${step.line}"]`);
+    if(el) el.scrollIntoView({ block:'center', behavior:'smooth' });
+  }
+
+  $('trace-empty').style.display = 'none';
+  $('trace-content').style.display = 'block';
+  $('step-note').textContent = step.note || (step.line ? `Executing line ${step.line}.` : 'Program finished.');
+  if(step.isError){
+    $('step-note').style.color = 'var(--red)';
+  } else {
+    $('step-note').style.color = '';
+  }
+
+  const prevVars = i > 0 ? state.steps[i-1].vars : {};
+  const names = Object.keys(step.vars || {}).sort();
+  let rows = '';
+  if(names.length === 0){
+    rows = `<tr><td colspan="2" style="color:var(--text-faint);">(no variables in scope yet)</td></tr>`;
+  }
+  names.forEach(n => {
+    const val = step.vars[n];
+    const changed = JSON.stringify(val) !== JSON.stringify(prevVars ? prevVars[n] : undefined);
+    let display;
+    try{ display = typeof val === 'string' ? val : JSON.stringify(val); }
+    catch(e){ display = String(val); }
+    if(display === undefined) display = '—';
+    rows += `<tr class="${changed?'changed':''}"><td class="vname">${escapeHtml(n)}</td><td class="vval">${escapeHtml(String(display))}</td></tr>`;
+  });
+  $('vars-body').innerHTML = rows;
+
+  // console tab, cumulative up to this step
+  const entries = state.consoleEntries.filter(c => c.step <= i+1);
+  const cbody = $('console-body');
+  $('console-count').textContent = entries.length;
+  if(entries.length === 0){
+    $('console-empty').style.display = 'block';
+    cbody.innerHTML = '';
+  } else {
+    $('console-empty').style.display = 'none';
+    cbody.innerHTML = entries.map(e => `<div class="console-line"><span class="step-tag">#${e.step}</span>${escapeHtml(e.text)}</div>`).join('');
+  }
+
+  updateTapeHead();
+}
+
+function updateTapeHead(){
+  const n = state.steps.length;
+  const pct = n <= 1 ? 0 : (state.cur / (n-1)) * 100;
+  $('tapehead').style.left = pct + '%';
+}
+
+function buildTape(){
+  const ticksEl = $('ticks');
+  const n = state.steps.length;
+  let html = '';
+  state.steps.forEach((s, i) => {
+    const pct = n <= 1 ? 0 : (i/(n-1))*100;
+    html += `<div class="tick${s.isError?' err':''}" style="left:${pct}%" data-i="${i}"></div>`;
+  });
+  ticksEl.innerHTML = html;
+  updateTapeHead();
+}
+
+$('tape').addEventListener('click', (e) => {
+  if(!state.steps.length) return;
+  const rect = $('tape').getBoundingClientRect();
+  const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+  const idx = Math.round(pct * (state.steps.length - 1));
+  stopPlay();
+  renderStep(idx);
+});
+
+$('btn-first').addEventListener('click', () => { stopPlay(); renderStep(0); });
+$('btn-last').addEventListener('click', () => { stopPlay(); renderStep(state.steps.length-1); });
+$('btn-prev').addEventListener('click', () => { stopPlay(); renderStep(Math.max(0, state.cur-1)); });
+$('btn-next').addEventListener('click', () => { stopPlay(); renderStep(Math.min(state.steps.length-1, state.cur+1)); });
+
+$('btn-play').addEventListener('click', () => {
+  if(state.playing){ stopPlay(); return; }
+  state.playing = true;
+  setPlayIcon(true);
+  const speed = parseInt($('speed').value, 10);
+  state.playTimer = setInterval(() => {
+    if(state.cur >= state.steps.length - 1){ stopPlay(); return; }
+    renderStep(state.cur + 1);
+  }, speed);
+});
+
+function stopPlay(){
+  state.playing = false;
+  setPlayIcon(false);
+  if(state.playTimer){ clearInterval(state.playTimer); state.playTimer = null; }
+}
+
+function setPlayIcon(playing){
+  $('btn-play').innerHTML = playing
+    ? `<svg class="icn" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>`
+    : `<svg class="icn" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+}
+
+function resetTrace(){
+  stopPlay();
+  state.steps = [];
+  state.consoleEntries = [];
+  state.cur = 0;
+  enableTransport(false);
+  $('odometer').innerHTML = '— <span class="of">/ —</span>';
+  $('ticks').innerHTML = '';
+  $('tapehead').style.left = '0%';
+  $('trace-empty').style.display = 'block';
+  $('trace-content').style.display = 'none';
+  $('console-empty').style.display = 'block';
+  $('console-body').innerHTML = '';
+  $('console-count').textContent = '0';
+}
+
+/* ============================= hints ============================= */
+
+$('btn-hints').addEventListener('click', async () => {
+  const source = codeEl.value.trim();
+  if(!source){ setStatus('Write some code first, then generate hints.', 'err'); return; }
+  if(!state.apiKey){
+    setStatus('Add your Groq API key (top right) to generate hints.', 'err');
+    $('keypop').classList.add('open');
+    return;
+  }
+  const problem = $('problem').value.trim();
+  const btn = $('btn-hints');
+  btn.disabled = true;
+  const origLabel = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Thinking…';
+
+  const prompt = `A learner is working on this ${state.lang === 'py' ? 'Python' : 'JavaScript'} code${problem ? ' for the following problem:\n' + problem : ''}.
+
+Code:
+${source}
+
+Generate exactly 4 progressive hints for someone stuck on this, ordered from a gentle conceptual nudge (hint 1) to a fairly specific pointer toward the fix or next step (hint 4). NEVER reveal full working code or the complete solution — describe approach and reasoning in words only, at most one short inline code fragment (a few tokens) if truly necessary. Each hint 1-2 sentences.
+
+Return ONLY JSON, no markdown fences: {"hints": ["...", "...", "...", "..."]}`;
+
+  try{
+    const raw = await callGroq(prompt, 700);
+    const parsed = parseJSONLoose(raw);
+    state.hints = parsed.hints || [];
+    state.hintsRevealed = 0;
+    renderHints();
+    setStatus('Hints ready.', 'ok');
+  } catch(err){
+    setStatus('Error generating hints: ' + err.message, 'err');
+  } finally{
+    btn.disabled = false;
+    btn.innerHTML = origLabel;
+  }
+});
+
+function renderHints(){
+  const body = $('hints-body');
+  $('hints-empty').style.display = state.hints.length ? 'none' : 'block';
+  body.innerHTML = state.hints.map((h, i) => {
+    const locked = i > state.hintsRevealed;
+    return `<div class="hint-card ${locked?'locked':''}" data-i="${i}">
+      <div class="hnum">Hint ${i+1} of ${state.hints.length}</div>
+      <div class="htext">${escapeHtml(h)}</div>
+      ${locked ? `<div class="lockrow"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> tap to reveal</div>` : ''}
+    </div>`;
+  }).join('');
+  body.querySelectorAll('.hint-card.locked').forEach(card => {
+    card.addEventListener('click', () => {
+      const i = parseInt(card.dataset.i, 10);
+      if(i === state.hintsRevealed + 1 || i <= state.hintsRevealed){
+        state.hintsRevealed = Math.max(state.hintsRevealed, i);
+        renderHints();
+      } else {
+        // reveal sequentially — jump to next locked one
+        state.hintsRevealed += 1;
+        renderHints();
+      }
+    });
+  });
+}
+
+/* ============================= debug assistant (chat) ============================= */
+
+const ASSIST_SYSTEM = `You are the built-in debugging assistant inside CogniDBG, a code step-tracer. You are shown the user's current code (and sometimes trace/error context). Be direct and concrete: say plainly what is wrong and how to fix it — unlike the app's separate "hints" feature, you are allowed to give the full fix, including a short corrected code snippet when it helps. Keep answers focused and no longer than necessary; use short paragraphs or a small code block, not walls of text. If nothing looks wrong, say so and briefly explain why the code works.`;
+
+function mdLiteToHtml(text){
+  // minimal, safe markdown-lite: escape first, then re-introduce code fences/inline code/bold
+  let s = escapeHtml(text);
+  s = s.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, (m, lang, code) => `<pre>${code.replace(/\n$/,'')}</pre>`);
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+  return `<p>${s}</p>`;
+}
+
+function renderAssistant(){
+  const log = $('assist-log');
+  const empty = $('assist-empty');
+  empty.style.display = state.assistantMessages.length ? 'none' : 'block';
+  const bubbles = state.assistantMessages.map(m => `
+    <div class="msg ${m.role}">
+      <div class="avatar">${m.role === 'user' ? 'YOU' : 'AI'}</div>
+      <div class="bubble">${mdLiteToHtml(m.content)}</div>
+    </div>`).join('');
+  // preserve the empty-state node, append bubbles after it
+  log.innerHTML = '';
+  log.appendChild(empty);
+  log.insertAdjacentHTML('beforeend', bubbles);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setThinking(on){
+  const log = $('assist-log');
+  let el = document.getElementById('assist-thinking');
+  if(on){
+    if(el) return;
+    log.insertAdjacentHTML('beforeend', `
+      <div class="msg assistant thinking" id="assist-thinking">
+        <div class="avatar">AI</div>
+        <div class="bubble"><span class="spinner"></span> thinking…</div>
+      </div>`);
+    log.scrollTop = log.scrollHeight;
+  } else if(el){
+    el.remove();
+  }
+}
+
+async function sendToAssistant(userText){
+  if(!state.apiKey){
+    setStatus('Add your Groq API key (top right) to use the assistant.', 'err');
+    $('keypop').classList.add('open');
+    return;
+  }
+  state.assistantMessages.push({ role:'user', content:userText });
+  renderAssistant();
+  setThinking(true);
+  $('btn-assist-send').disabled = true;
+  $('btn-diagnose').disabled = true;
+  try{
+    const apiMessages = [
+      { role:'system', content: ASSIST_SYSTEM },
+      ...state.assistantMessages.map(m => ({ role:m.role, content:m.content }))
+    ];
+    const reply = await callGroq(apiMessages, 900);
+    state.assistantMessages.push({ role:'assistant', content: reply });
+    setStatus('Assistant replied.', 'ok');
+  } catch(err){
+    state.assistantMessages.push({ role:'assistant', content: `⚠ ${err.message}` });
+    setStatus('Assistant error: ' + err.message, 'err');
+  } finally{
+    setThinking(false);
+    renderAssistant();
+    $('btn-assist-send').disabled = false;
+    $('btn-diagnose').disabled = false;
+  }
+}
+
+$('btn-assist-send').addEventListener('click', () => {
+  const input = $('assist-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  sendToAssistant(text);
+});
+
+$('assist-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    $('btn-assist-send').click();
+  }
+});
+
+$('btn-diagnose').addEventListener('click', () => {
+  const code = codeEl.value.trim();
+  if(!code){ setStatus('Nothing to diagnose — write some code first.', 'err'); return; }
+  const fence = state.lang === 'py' ? 'python' : 'javascript';
+  let msg = `Diagnose this ${state.lang === 'py' ? 'Python' : 'JavaScript'} code — what's wrong with it, and how do I fix it?\n\n\`\`\`${fence}\n${code}\n\`\`\``;
+  if(state.errorStep !== null && state.steps[state.errorStep]){
+    msg += `\n\nWhile tracing it I hit this: ${state.steps[state.errorStep].note}`;
+  }
+  sendToAssistant(msg);
+});
+
+$('btn-clear-chat').addEventListener('click', () => {
+  state.assistantMessages = [];
+  renderAssistant();
+});
+
+/* ============================= keyboard shortcuts ============================= */
+document.addEventListener('keydown', (e) => {
+  if(document.activeElement === codeEl || document.activeElement === $('problem') || document.activeElement === $('apikey') || document.activeElement === $('assist-input')) return;
+  if(!state.steps.length) return;
+  if(e.key === 'ArrowRight'){ stopPlay(); renderStep(Math.min(state.steps.length-1, state.cur+1)); }
+  if(e.key === 'ArrowLeft'){ stopPlay(); renderStep(Math.max(0, state.cur-1)); }
+  if(e.key === ' '){ e.preventDefault(); $('btn-play').click(); }
+});
+
+/* ============================= init ============================= */
+loadSample('js');
+resetTrace();
+
+})();
+</script>
+</body>
+</html>
