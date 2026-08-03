@@ -21,7 +21,7 @@ export const projects: Project[] = [
     shortDescription: "A step-by-step code debugger with real JavaScript execution and AI trace analysis.",
     longDescription: "CogniDBG is an interactive step-by-step code execution visualizer and debugger featuring real JavaScript execution, Python AI tracing, live variable state tracking, and AI assistance hints.",
     technologies: ["JavaScript", "HTML5", "CSS3", "AI Tracing"],
-    liveDemo: "#", // Add live URL or link to local html file if available
+    liveDemo: "/cognidbg.html",
     github: "https://github.com/td0911491-gif/portfolio", // Replace with CogniDBG repo URL if hosted separately
     featured: true,
     status: "completed",
