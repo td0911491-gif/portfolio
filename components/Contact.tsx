@@ -1,41 +1,41 @@
-const items = [
-  {
-    date: "CURRENT",
-    title: "Software Engineer Intern",
-    sub: "HackerRank",
-  },
-  {
-    date: "YEAR 1",
-    title: "Bachelor of Computer Applications (BCA)",
-    sub: "1st year student — general CS, no specialization chosen yet",
-  },
-];
+import ProfileCard from "./ProfileCard";
 
-export default function Experience() {
+export default function Hero() {
   return (
-    <section className="bg-bg-alt border-y border-border px-[6vw] py-28">
-      <div className="flex items-center gap-2.5 text-red text-xs tracking-wide mb-4 font-mono before:content-[''] before:w-6 before:h-px before:bg-red">
-        $ git log --education --experience
-      </div>
-      <h2 className="font-display font-extrabold text-cream text-[clamp(32px,5vw,58px)] mb-12">
-        Education &amp; <span className="text-red italic font-medium">Experience</span>
-      </h2>
+    <section className="min-h-screen flex flex-col justify-center px-[6vw] pt-32 pb-16 relative bg-bg overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(225,58,75,0.18), transparent 70%)",
+        }}
+      />
 
-      <div className="relative pl-9">
-        <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" />
-        {items.map((item, i) => (
-          <div key={i} className="relative pb-12 last:pb-0">
-            <div className="absolute -left-9 top-1 w-[11px] h-[11px] rounded-full bg-bg border-2 border-red" />
-            <div className="text-xs text-red tracking-wide mb-2 font-mono">
-              {item.date}
-            </div>
-            <div className="font-display font-bold text-2xl text-cream mb-1.5">
-              {item.title}
-            </div>
-            <div className="text-sm text-muted font-mono">{item.sub}</div>
+      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div>
+          <div className="flex items-center gap-1 text-red text-sm mb-4 font-mono">
+            $ whoami
+            <span className="inline-block w-[9px] h-[18px] bg-red ml-1 animate-pulse" />
           </div>
-        ))}
+
+          <h1 className="font-display font-black leading-[0.92] tracking-tight text-cream text-[clamp(52px,7vw,100px)]">
+            TAMOGHNA
+            <br />
+            <span className="text-red italic font-semibold">Dhar</span>
+          </h1>
+
+          <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted font-mono">
+            1st-year BCA student and software engineer intern, building clean
+            solutions with Python, SQL and Java — one commit at a time.
+          </p>
+
+          <div className="mt-7 inline-flex items-center gap-2 text-sm text-cream border border-border bg-surface px-4 py-2.5 rounded-sm w-fit font-mono">
+            <span className="text-red">&gt;</span> Software Engineer Intern @
+            HackerRank
+          </div>
+        </div>
+
+        <div className="hidden md:flex justify-center">
+          <ProfileCard />
+        </div>
       </div>
-    </section>
-  );
-}
