@@ -1,71 +1,48 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { Check, Copy } from "lucide-react";
-import Section from "@/components/ui/Section";
 import { personal } from "@/data/personal";
 import { socialLinks } from "@/data/social";
-import SocialIcon from "@/components/SocialIcon";
+
+const links = [
+  ...socialLinks.map((link) => ({
+    label: link.label,
+    icon: link.label === "GitHub" ? "⌥" : link.label === "LinkedIn" ? "in" : link.label === "LeetCode" ? "</>" : link.label === "Instagram" ? "◆" : "✉",
+    href: link.href,
+  })),
+  {
+    label: "Email",
+    icon: "✉",
+    href: `mailto:${personal.email}`,
+  },
+];
 
 export default function Contact() {
-  const [copied, setCopied] = useState(false);
-
-  const copyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(personal.email);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // clipboard not available — ignore silently
-    }
-  };
-
   return (
-    <Section
+    <section
       id="contact"
-      command="contact.sh"
-      title="Get in touch"
-      subtitle="Reach out directly — no forms, no middleman."
+      className="bg-bg-alt border-t border-border text-center px-[6vw] py-28"
     >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="rounded border border-border bg-bg-elevated p-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-ink-muted">
-              <span className="text-red">$</span> mail -s &quot;hello&quot;
-            </p>
-            <p className="mt-1 text-lg font-bold text-ink">{personal.email}</p>
-          </div>
-          <button
-            onClick={copyEmail}
-            className="flex items-center gap-1.5 rounded border border-border px-4 py-2 text-xs font-semibold text-ink-secondary transition-colors hover:border-red hover:text-red"
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "Copied" : "Copy email"}
-          </button>
-        </div>
+      <div className="flex items-center justify-center gap-2.5 text-red text-xs tracking-wide mb-4 font-mono">
+        $ ./connect.sh
+      </div>
+      <h2 className="font-display font-extrabold text-cream text-[clamp(32px,5vw,58px)] mb-4">
+        Let&apos;s <span className="text-red italic font-medium">connect</span>
+      </h2>
+      <p className="text-sm text-muted max-w-md mx-auto mb-12 leading-relaxed font-mono">
+        Open to internship opportunities, collaborations, and just talking
+        shop about code.
+      </p>
 
-        <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-6">
-          {socialLinks.map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded border border-border px-4 py-2 text-xs text-ink-secondary transition-colors hover:border-red hover:text-red"
-            >
-              <SocialIcon icon={s.icon} size={14} />
-              {s.label}
-            </a>
-          ))}
-        </div>
-      </motion.div>
-    </Section>
+      <div className="flex flex-wrap justify-center gap-4">
+        {links.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            className="flex items-center gap-3 border border-border bg-surface px-6 py-4 rounded-sm text-sm min-w-[200px] transition-all hover:border-red hover:bg-red/5 hover:-translate-y-1"
+          >
+            <span className="text-red text-lg">{link.icon}</span>
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </section>
   );
 }
