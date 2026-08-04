@@ -1,42 +1,31 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import type { ReactNode } from "react";
+import { Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/providers";
-import { personal } from "@/data/personal";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
-import ScrollProgress from "@/components/ScrollProgress";
-import BackToTop from "@/components/BackToTop";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["300", "400", "600", "700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+});
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-mono",
-  display: "swap"
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jetbrains",
 });
 
 export const metadata: Metadata = {
-  title: `${personal.name} — ${personal.status}`,
-  description: personal.bio,
-  openGraph: {
-    title: `${personal.name} — Portfolio`,
-    description: personal.tagline,
-    type: "website"
-  },
-  metadataBase: new URL("https://example.com")
+  title: "Tamoghna Dhar",
+  description: "Portfolio of Tamoghna Dhar",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={jetbrainsMono.variable} suppressHydrationWarning>
-      <body>
-        <Providers>
-          <ScrollProgress />
-          <Nav />
-          <main>{children}</main>
-          <Footer />
-          <BackToTop />
-        </Providers>
+    <html lang="en">
+      <body className={`${fraunces.variable} ${jetbrainsMono.variable} font-mono bg-bg text-cream`}>
+        {children}
       </body>
     </html>
   );
