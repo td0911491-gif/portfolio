@@ -1,0 +1,25 @@
+// Place this inside your hero section, right after the <h1> with your name
+
+<div className="flex flex-col items-center mt-8 md:items-start md:mt-6">
+  <p className="font-mono text-sm text-neutral-500 mb-4">
+    <span className="text-red-500">$</span> whoami --photo
+    <span className="inline-block w-2 h-4 bg-neutral-200 ml-1 animate-pulse" />
+  </p>
+
+  <div className="relative w-56 h-56 group">
+    {/* corner brackets */}
+    <div className="absolute -top-px -left-px w-4 h-4 border-t border-l border-red-500 z-10" />
+    <div className="absolute -bottom-px -right-px w-4 h-4 border-b border-r border-red-500 z-10" />
+
+    <Image
+      src="/photo.png"
+      alt="Tamoghna Dhar"
+      fill
+      className="object-cover rounded-xl border border-neutral-800 grayscale-[15%] contrast-105 transition-all duration-300 group-hover:grayscale-0 group-hover:border-red-500"
+    />
+  </div>
+
+  <p className="mt-4 font-mono text-xs text-neutral-500">
+    &gt; <span className="text-neutral-200">tamoghna_dhar.png</span> loaded
+  </p>
+</div>

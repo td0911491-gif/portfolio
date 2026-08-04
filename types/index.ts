@@ -70,7 +70,7 @@ export interface Achievement {
 export interface SocialLink {
   label: string;
   href: string;
-  icon: "github" | "linkedin" | "leetcode" | "codeforces" | "mail" | "discord";
+  icon: "github" | "linkedin" | "leetcode" | "codeforces" | "mail" | "discord" | "instagram";
 }
 
 export interface PersonalInfo {

@@ -1,52 +1,41 @@
-"use client";
-
-import { motion } from "framer-motion";
-import Section from "@/components/ui/Section";
-import { experience } from "@/data/experience";
+const items = [
+  {
+    date: "CURRENT",
+    title: "Software Engineer Intern",
+    sub: "HackerRank",
+  },
+  {
+    date: "YEAR 1",
+    title: "Bachelor of Computer Applications (BCA)",
+    sub: "1st year student — general CS, no specialization chosen yet",
+  },
+];
 
 export default function Experience() {
   return (
-    <Section
-      id="experience"
-      command="experience.log"
-      title="Experience"
-      subtitle="Internships, freelance work, and hands-on learning."
-    >
-      <div className="relative border-l border-border pl-6">
-        {experience.map((item, i) => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, x: -16 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: i * 0.1 }}
-            className="relative mb-10 last:mb-0"
-          >
-            <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full border-2 border-red bg-bg" />
-            <p className="text-xs text-ink-muted">
-              {item.start}
-              {item.end ? ` — ${item.end}` : " — Present"}
-            </p>
-            <h3 className="mt-1 text-lg font-bold text-ink">
-              {item.role} <span className="text-red">@ {item.organization}</span>
-            </h3>
-            <p className="mt-2 text-sm text-ink-secondary">{item.description}</p>
-            {item.bullets && (
-              <ul className="mt-3 space-y-1.5">
-                {item.bullets.map((b, idx) => (
-                  <li key={idx} className="flex gap-2 text-sm text-ink-secondary">
-                    <span className="text-red">›</span>
-                    {b}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </motion.div>
-        ))}
-        {experience.length === 0 && (
-          <p className="text-sm text-ink-muted">Nothing logged yet — check back soon.</p>
-        )}
+    <section className="bg-bg-alt border-y border-border px-[6vw] py-28">
+      <div className="flex items-center gap-2.5 text-red text-xs tracking-wide mb-4 font-mono before:content-[''] before:w-6 before:h-px before:bg-red">
+        $ git log --education --experience
       </div>
-    </Section>
+      <h2 className="font-display font-extrabold text-cream text-[clamp(32px,5vw,58px)] mb-12">
+        Education &amp; <span className="text-red italic font-medium">Experience</span>
+      </h2>
+
+      <div className="relative pl-9">
+        <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" />
+        {items.map((item, i) => (
+          <div key={i} className="relative pb-12 last:pb-0">
+            <div className="absolute -left-9 top-1 w-[11px] h-[11px] rounded-full bg-bg border-2 border-red" />
+            <div className="text-xs text-red tracking-wide mb-2 font-mono">
+              {item.date}
+            </div>
+            <div className="font-display font-bold text-2xl text-cream mb-1.5">
+              {item.title}
+            </div>
+            <div className="text-sm text-muted font-mono">{item.sub}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
