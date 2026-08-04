@@ -1,46 +1,39 @@
-import { personal } from "@/data/personal";
-import { socialLinks } from "@/data/social";
-
-const links = [
-  ...socialLinks.map((link) => ({
-    label: link.label,
-    icon: link.label === "GitHub" ? "⌥" : link.label === "LinkedIn" ? "in" : link.label === "LeetCode" ? "</>" : link.label === "Instagram" ? "◆" : "✉",
-    href: link.href,
-  })),
+const items = [
   {
-    label: "Email",
-    icon: "✉",
-    href: `mailto:${personal.email}`,
+    date: "CURRENT",
+    title: "Software Engineer Intern",
+    sub: "HackerRank",
+  },
+  {
+    date: "YEAR 1",
+    title: "Bachelor of Computer Applications (BCA)",
+    sub: "1st year student — general CS, no specialization chosen yet",
   },
 ];
 
-export default function Contact() {
+export default function Experience() {
   return (
-    <section
-      id="contact"
-      className="bg-bg-alt border-t border-border text-center px-[6vw] py-28"
-    >
-      <div className="flex items-center justify-center gap-2.5 text-red text-xs tracking-wide mb-4 font-mono">
-        $ ./connect.sh
+    <section className="bg-bg-alt border-y border-border px-[6vw] py-28">
+      <div className="flex items-center gap-2.5 text-red text-xs tracking-wide mb-4 font-mono before:content-[''] before:w-6 before:h-px before:bg-red">
+        $ git log --education --experience
       </div>
-      <h2 className="font-display font-extrabold text-cream text-[clamp(32px,5vw,58px)] mb-4">
-        Let&apos;s <span className="text-red italic font-medium">connect</span>
+      <h2 className="font-display font-extrabold text-cream text-[clamp(32px,5vw,58px)] mb-12">
+        Education &amp; <span className="text-red italic font-medium">Experience</span>
       </h2>
-      <p className="text-sm text-muted max-w-md mx-auto mb-12 leading-relaxed font-mono">
-        Open to internship opportunities, collaborations, and just talking
-        shop about code.
-      </p>
 
-      <div className="flex flex-wrap justify-center gap-4">
-        {links.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            className="flex items-center gap-3 border border-border bg-surface px-6 py-4 rounded-sm text-sm min-w-[200px] transition-all hover:border-red hover:bg-red/5 hover:-translate-y-1"
-          >
-            <span className="text-red text-lg">{link.icon}</span>
-            {link.label}
-          </a>
+      <div className="relative pl-9">
+        <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" />
+        {items.map((item, i) => (
+          <div key={i} className="relative pb-12 last:pb-0">
+            <div className="absolute -left-9 top-1 w-[11px] h-[11px] rounded-full bg-bg border-2 border-red" />
+            <div className="text-xs text-red tracking-wide mb-2 font-mono">
+              {item.date}
+            </div>
+            <div className="font-display font-bold text-2xl text-cream mb-1.5">
+              {item.title}
+            </div>
+            <div className="text-sm text-muted font-mono">{item.sub}</div>
+          </div>
         ))}
       </div>
     </section>
