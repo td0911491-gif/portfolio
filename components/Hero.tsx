@@ -11,8 +11,8 @@ export default function Hero() {
         }}
       />
 
-      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div>
+      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0 items-start md:items-start">
+        <div className="relative z-30 md:-mr-32 md:pt-20">
           <div className="flex items-center gap-1 text-red text-sm mb-4 font-mono">
             $ whoami
             <span className="inline-block w-[9px] h-[18px] bg-red ml-1 animate-pulse" />
@@ -35,7 +35,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hidden md:flex justify-center">
+        <div className="hidden md:flex justify-center relative z-20">
           <ProfileCard />
         </div>
       </div>
