@@ -27,19 +27,19 @@ export const projects: Project[] = [
     status: "completed",
     tags: ["debugger", "javascript", "developer-tools", "ai"]
   }
-{
-    slug: "routeComp",
-    name: "RouteComp",
+   {
+    slug: "route-comparator",
+    name: "Route Comparator Preview",
     category: "Web Application",
     shortDescription: "A interactive route comparison preview tool.",
     longDescription: "An interactive visualization tool for testing and previewing route comparisons and travel paths.",
     technologies: ["HTML", "CSS", "JavaScript"],
-    liveDemo: "routecomp_preview.html",
+    liveDemo: "http://127.0.0.1:5501/backend/templates/routecomp_preview%20(2).html",
     github: "https://github.com/td0911491-gif/portfolio",
     featured: true,
     status: "completed",
     tags: ["routes", "preview", "web", "tool"]
-  },
+  }, 
   
 ];
 
