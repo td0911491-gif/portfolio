@@ -27,6 +27,20 @@ export const projects: Project[] = [
     status: "completed",
     tags: ["debugger", "javascript", "developer-tools", "ai"]
   }
+{
+    slug: "routeComp",
+    name: "RouteComp",
+    category: "Web Application",
+    shortDescription: "A interactive route comparison preview tool.",
+    longDescription: "An interactive visualization tool for testing and previewing route comparisons and travel paths.",
+    technologies: ["HTML", "CSS", "JavaScript"],
+    liveDemo: "routecomp_preview.html",
+    github: "https://github.com/td0911491-gif/portfolio",
+    featured: true,
+    status: "completed",
+    tags: ["routes", "preview", "web", "tool"]
+  },
+  
 ];
 
 export const featuredProjects = projects.filter((p) => p.featured);
