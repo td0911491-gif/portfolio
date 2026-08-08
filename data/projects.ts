@@ -33,7 +33,7 @@ export const projects: Project[] = [
     shortDescription: "A interactive route comparison preview tool.",
     longDescription: "An interactive visualization tool for testing and previewing route comparisons and travel paths.",
     technologies: ["HTML", "CSS", "JavaScript"],
-    liveDemo: "/route-comparator.html",
+    liveDemo: "http://127.0.0.1:5500/backend/templates/routecomp_preview.html",
     github: "https://github.com/td0911491-gif/portfolio",
     featured: true,
     status: "completed",
