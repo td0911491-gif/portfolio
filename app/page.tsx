@@ -4,7 +4,7 @@ import Skills from "@/components/Skills";
 import Experience from "@/components/Experience";
 import Certifications from "@/components/Certifications";
 import Achievements from "@/components/Achievements";
-import GithubStats from "@/components/GithubStats";
+import GithubRepos from "@/components/GithubRepos";
 import LeetCodeStats from "@/components/LeetCodeStats";
 import ProjectsPreview from "@/components/ProjectsPreview";
 import BlogPreview from "@/components/BlogPreview";
@@ -23,7 +23,7 @@ export default function Home() {
       <Experience />
       <Certifications />
       <Achievements />
-      <GithubStats />
+      <GithubRepos />
       <LeetCodeStats />
       <ProjectsPreview />
       <BlogPreview />
