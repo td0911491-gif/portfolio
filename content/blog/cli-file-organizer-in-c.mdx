@@ -1,0 +1,30 @@
+---
+title: "Why I'm Building a File Organizer CLI in C (Instead of Python)"
+slug: "cli-file-organizer-in-c"
+date: "2026-08-09"
+excerpt: "A command-line tool for searching and organizing files by type, size, and date — and why doing it in C instead of the obvious scripting-language choice is the point."
+tags: ["c", "cli", "systems"]
+---
+
+Every folder eventually turns into chaos — screenshots, half-finished PDFs, random zip files, all dumped in `Downloads` with no structure. The fix is usually "write a Python script," and honestly, that's the fast way to solve it. I'm deliberately not doing that.
+
+I'm building a command-line file organizer and search tool in C, and the point isn't that C is the *right* tool for this job — a scripting language would get this done in a fraction of the code. The point is everything Python quietly does for you that you have to do yourself in C:
+
+- **Walking a directory tree** without a `os.walk()` to lean on — using `opendir`/`readdir`/`stat` directly, and handling the edge cases those calls dump on you (symlinks, permission errors, directories that vanish mid-scan).
+- **String handling with no garbage collector** — every path you build, every buffer you fill, you're responsible for its lifetime. Get a buffer size wrong and you don't get a friendly exception, you get undefined behavior.
+- **Argument parsing by hand** (or via `getopt`), instead of `argparse` handing you a namespace object.
+- **Manual memory management** for anything dynamic — a growing list of matched files means growing an array yourself, tracking capacity, and freeing it correctly on every exit path, including error paths.
+
+## What it'll actually do
+
+The scope is intentionally small and useful rather than sprawling:
+
+- Search a directory tree for files matching a type, name pattern, size range, or modified-date range
+- Organize (move or copy, dry-run by default) matched files into subfolders by type or date
+- Report what it did in a clear, scriptable output format, so it composes with other shell tools instead of being a dead end
+
+## Why this is worth doing
+
+This project isn't about the end result being novel — file organizers are a solved problem. It's about the muscle memory of managing memory and resources explicitly, reasoning about pointer lifetimes, and reading `man` pages instead of framework docs. Those are exactly the muscles that atrophy if every project is in a language with a runtime doing the hard parts for you.
+
+I'll be documenting the actual build — including whatever memory bugs `valgrind` inevitably finds — as I go. Check back for the follow-up post once it's working end to end.
