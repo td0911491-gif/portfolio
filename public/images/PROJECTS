@@ -1,26 +1,26 @@
 const PROJECTS: Project[] = [
   {
-    slug: "pydb",
-    title: "pydb — SQL engine",
-    description: "A relational database built from scratch: B-tree storage, SQL parser, query executor, transactions.",
-    tags: ["Python", "B-Trees", "SQL"],
-    href: "#",
-    image: "/images/projects/pydb.png",
+    slug: "mathopia",
+    title: "Mathopia",
+    description: "A game To make Maths FUNN",
+    tags: ["Game"],
+    href: "https://tamoghnadhar.vercel.app/games/mathopia.html", // TODO — repo or live link
+    image: "/images/projects/mathopia.png",
   },
   {
-    slug: "file-organizer",
-    title: "File organizer CLI",
-    description: "A command-line tool for searching and organizing files by type, size, and date.",
-    tags: ["C", "CLI"],
-    href: "#",
-    image: "/images/projects/file-organizer.png",
+    slug: "cognidbg",
+    title: "CogniDBG",
+    description: "The Step By Step Debugger",
+    tags: ["Debugger"],
+    href: "https://tamoghnadhar.vercel.app/cognidbg.html", // TODO — repo or live link
+    image: "/images/projects/cognidbg.png",
   },
   {
-    slug: "dodge-game",
-    title: "Arcade dodge shooter",
-    description: "A top-down arcade shooter built with the LÖVE framework.",
-    tags: ["Lua", "LÖVE"],
-    href: "#",
-    image: "/images/projects/dodge-game.png",
+    slug: "routecomps",
+    title: "RouteComps_AI",
+    description: "Compare every way to get there — shortest, cheapest, and most luxurious routes, side by side.",
+    tags: ["AI", "Routing"],
+    href: "https://routecomp.vercel.app/", // TODO — repo or live link
+    image: "/images/projects/routecomps.png",
   },
 ];
