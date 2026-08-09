@@ -1,0 +1,26 @@
+const PROJECTS: Project[] = [
+  {
+    slug: "pydb",
+    title: "pydb — SQL engine",
+    description: "A relational database built from scratch: B-tree storage, SQL parser, query executor, transactions.",
+    tags: ["Python", "B-Trees", "SQL"],
+    href: "#",
+    image: "/images/projects/pydb.png",
+  },
+  {
+    slug: "file-organizer",
+    title: "File organizer CLI",
+    description: "A command-line tool for searching and organizing files by type, size, and date.",
+    tags: ["C", "CLI"],
+    href: "#",
+    image: "/images/projects/file-organizer.png",
+  },
+  {
+    slug: "dodge-game",
+    title: "Arcade dodge shooter",
+    description: "A top-down arcade shooter built with the LÖVE framework.",
+    tags: ["Lua", "LÖVE"],
+    href: "#",
+    image: "/images/projects/dodge-game.png",
+  },
+];
