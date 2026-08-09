@@ -1,0 +1,51 @@
+---
+title: "Building a SQL Database Engine From Scratch in Python"
+slug: "building-a-sql-engine-from-scratch"
+date: "2026-08-09"
+excerpt: "B-trees, overflow pages, a hand-written parser, and a transaction system with undo logging — what it actually takes to build a database engine from the disk up."
+tags: ["python", "databases", "systems", "sql"]
+---
+
+Most student projects that touch "databases" mean calling `sqlite3.connect()` and moving on. I wanted to know what's actually happening underneath that call — so I built `pydb`, a relational database engine from scratch in Python: a paged storage manager, an on-disk B+Tree, a hand-written SQL lexer and parser, a query executor, and transactions with rollback support.
+
+Here's what that actually involved.
+
+## The foundation: pages, not files
+
+Real databases don't read and write arbitrary byte ranges in a file. They think in fixed-size **pages** — 4KB blocks, in my case — and everything above that layer only ever deals in page numbers. This is the `Pager`: it hands out pages, tracks a free list so deleted pages get reused instead of leaking disk space, and persists a small header (page count, free-list head, catalog root) at the front of the file.
+
+Getting this right early mattered more than I expected — every bug above this layer became much easier to reason about once "where does this byte live" was a solved problem.
+
+## The B+Tree: where it gets real
+
+The core of any database is how it finds a row fast without scanning everything. I implemented an on-disk B+Tree keyed by row ID, with:
+
+- **Leaf nodes** holding the actual row data, linked left-to-right so range scans never have to climb back up the tree
+- **Internal nodes** that only route — no data, just keys and child pointers
+- **Overflow pages** for values too large to fit inline in a leaf cell, so a single big row doesn't blow up page-splitting logic
+
+The split/merge logic is the part that actually teaches you something. Inserting into a full leaf means splitting it into two, promoting the smallest key of the right half up into the parent — and if the parent is now full too, that split cascades upward, potentially creating a brand new root. Writing that recursion correctly, and testing it against thousands of random insertions, is where most of my debugging time went.
+
+One bug in particular stuck with me: my tree would silently lose keys after certain splits. The cause was a one-character mistake — using `bisect_left` semantics to route searches through internal nodes, when the correct behavior for "children[i] holds keys < key[i]" requires `bisect_right`. When a key equaled a separator exactly, the search descended into the wrong subtree and came back empty. It only showed up after enough inserts to trigger a split at exactly the wrong boundary — a good reminder that off-by-one errors in tree routing don't announce themselves, they just quietly disappear data.
+
+## Teaching it to understand SQL
+
+With storage working, the tree needed a language. I wrote:
+
+- A **lexer** that tokenizes raw SQL text — keywords, operators, string/number literals, comments
+- A **recursive-descent parser** that turns tokens into an AST, handling operator precedence properly (`AND` binds tighter than `OR`, comparisons bind tighter than both, `NOT` and unary minus tighter still)
+- An **evaluator** that walks WHERE-clause expression trees against a row and returns true/false
+
+Supporting `CREATE TABLE`, `INSERT`, `SELECT` (with `WHERE`, `ORDER BY`, `LIMIT`, aggregates like `COUNT`/`SUM`/`AVG`), `UPDATE`, and `DELETE` meant the parser had to handle real SQL shapes, not a toy subset — including things like `IN (...)` desugaring into a chain of OR'd equality checks.
+
+## Transactions without a real WAL
+
+The hardest design decision was how to support `BEGIN` / `COMMIT` / `ROLLBACK` without building a full write-ahead log. I went with a lighter undo-log scheme: on `BEGIN`, the pager starts recording the *original* bytes of every page the first time it's written to during the transaction. `COMMIT` just discards that log — the writes already happened in place. `ROLLBACK` replays the original bytes back over every modified page and restores the file header to its pre-transaction snapshot.
+
+It's a real simplification compared to how Postgres or SQLite actually do this, but it's correct for a single-writer engine, and building it forced me to understand *why* real systems don't take this shortcut at scale (it doesn't compose with concurrent writers, and every rolled-back transaction pays for writes it's about to undo).
+
+## What's next
+
+Secondary indexes exist in a basic form; query planning is currently "full scan unless an index matches the WHERE column exactly." The natural next steps are a real cost-based planner and proper node merging on delete (right now, underfull B-tree nodes just sit there rather than being rebalanced — a known, documented simplification).
+
+If you want to see it: [link to the repo]. It's not production software, and it was never meant to be — it's the fastest way I know to actually understand what a database is doing when you type `SELECT`.
