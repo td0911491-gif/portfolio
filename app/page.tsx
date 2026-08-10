@@ -6,7 +6,7 @@ import Certifications from "@/components/Certifications";
 import Achievements from "@/components/Achievements";
 import GithubRepos from "@/components/GithubRepos";
 import LeetCodeStats from "@/components/LeetCodeStats";
-import ProjectsPreview from "@/components/ProjectsPreview";
+import ProjectsHoverPreview from "@/components/ProjectsHoverPreview";
 import BlogPreview from "@/components/BlogPreview";
 import Contact from "@/components/Contact";
 import { ScrollProgressBar } from "@/components/ScrollLog";
@@ -25,7 +25,7 @@ export default function Home() {
       <Achievements />
       <GithubRepos />
       <LeetCodeStats />
-      <ProjectsPreview />
+      <ProjectsHoverPreview />
       <BlogPreview />
       <Contact />
     </>
