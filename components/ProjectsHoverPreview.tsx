@@ -67,14 +67,7 @@ export default function ProjectsHoverPreview() {
       <ul className="border-t border-[#262422]">
         {PROJECTS.map((project) => (
           <li key={project.slug} className="border-b border-[#262422]">
-            
-              href={project.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onMouseEnter={() => setHovered(project)}
-              onMouseLeave={() => setHovered(null)}
-              className="flex items-baseline justify-between gap-6 py-6 group"
-            >
+            <a href={project.href} target="_blank" rel="noopener noreferrer" onMouseEnter={() => setHovered(project)} onMouseLeave={() => setHovered(null)} className="flex items-baseline justify-between gap-6 py-6 group">
               <span
                 className={`font-mono text-xl md:text-3xl font-bold transition-colors duration-200 ${
                   hovered?.slug === project.slug ? "text-[#ff3b3b]" : "text-[#e9e6e2]"
