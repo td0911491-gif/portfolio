@@ -1,31 +1,5 @@
 "use client";
 
-/**
- * ProjectsHoverPreview
- * --------------------
- * A project list styled as plain text rows (dev-terminal style). On hover,
- * a small preview image appears and follows the cursor, smoothed with a
- * spring so it trails slightly rather than snapping -- swap in for your
- * existing ProjectsPreview.tsx, or use it as a new "Projects" section.
- *
- * SETUP
- * -----
- * 1. Add a preview screenshot for each project to /public/projects/, e.g.
- *      public/projects/pydb.png
- *      public/projects/file-organizer.png
- *      public/projects/dodge-game.png
- *
- * 2. Edit the PROJECTS array below -- title, description, tags, href, and
- *    the image path (must start with "/", matching Next's /public convention).
- *
- * 3. Drop <ProjectsHoverPreview /> into app/page.tsx wherever your current
- *    <ProjectsPreview /> is (or alongside it).
- *
- * Colors are hardcoded to match the existing black/red palette
- * (#0a0a0a / #ff3b3b / #262422 / #7a7672) -- swap for your Tailwind theme
- * tokens if you have them defined, per the note in ScrollLog.tsx.
- */
-
 import { useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import Image from "next/image";
@@ -36,40 +10,39 @@ type Project = {
   description: string;
   tags: string[];
   href: string;
-  image: string; // path under /public, e.g. "/projects/pydb.png"
+  image: string;
 };
 
 const PROJECTS: Project[] = [
   {
-    slug: "pydb",
-    title: "pydb — SQL engine",
-    description: "A relational database built from scratch: B-tree storage, SQL parser, query executor, transactions.",
-    tags: ["Python", "B-Trees", "SQL"],
-    href: "#",
-    image: "/projects/pydb.png",
+    slug: "mathopia",
+    title: "Mathopia",
+    description: "A game to make maths fun.",
+    tags: ["Game"],
+    href: "https://tamoghnadhar.vercel.app/games/mathopia.html",
+    image: "/images/projects/mathopia.png",
   },
   {
-    slug: "file-organizer",
-    title: "File organizer CLI",
-    description: "A command-line tool for searching and organizing files by type, size, and date.",
-    tags: ["C", "CLI"],
-    href: "#",
-    image: "/projects/file-organizer.png",
+    slug: "cognidbg",
+    title: "CogniDBG",
+    description: "The step-by-step debugger.",
+    tags: ["Debugger"],
+    href: "https://tamoghnadhar.vercel.app/cognidbg.html",
+    image: "/images/projects/cognidbg.png",
   },
   {
-    slug: "dodge-game",
-    title: "Arcade dodge shooter",
-    description: "A top-down arcade shooter built with the LÖVE framework.",
-    tags: ["Lua", "LÖVE"],
-    href: "#",
-    image: "/projects/dodge-game.png",
+    slug: "routecomps",
+    title: "RouteComps_AI",
+    description: "Compare every way to get there — shortest, cheapest, and most luxurious routes, side by side.",
+    tags: ["AI", "Routing"],
+    href: "https://routecomp.vercel.app/",
+    image: "/images/projects/routecomps.png",
   },
 ];
 
 export default function ProjectsHoverPreview() {
   const [hovered, setHovered] = useState<Project | null>(null);
 
-  // raw cursor position -> springed position, so the preview trails smoothly
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 300, damping: 30, mass: 0.5 });
@@ -94,8 +67,10 @@ export default function ProjectsHoverPreview() {
       <ul className="border-t border-[#262422]">
         {PROJECTS.map((project) => (
           <li key={project.slug} className="border-b border-[#262422]">
-            <a
+            
               href={project.href}
+              target="_blank"
+              rel="noopener noreferrer"
               onMouseEnter={() => setHovered(project)}
               onMouseLeave={() => setHovered(null)}
               className="flex items-baseline justify-between gap-6 py-6 group"
@@ -122,7 +97,6 @@ export default function ProjectsHoverPreview() {
         ))}
       </ul>
 
-      {/* floating preview image, follows the cursor */}
       <AnimatePresence>
         {hovered && (
           <motion.div
@@ -148,7 +122,7 @@ export default function ProjectsHoverPreview() {
                 alt={`${hovered.title} preview`}
                 fill
                 sizes="320px"
-                className="object-cover"
+                className="object-contain p-6"
               />
             </div>
             <p className="font-mono text-xs text-[#7a7672] px-3 py-2 border-t border-[#262422]">
