@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.84",
     "@types/three": "^0.185.4",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.19",
