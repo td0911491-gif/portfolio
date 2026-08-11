@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import CircuitField from "@/components/CircuitField";
+import ChatWidget from "@/components/ChatWidget";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -25,7 +27,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${fraunces.variable} ${jetbrainsMono.variable} font-mono bg-bg text-cream`}>
+        <CircuitField />
         {children}
+        <ChatWidget />
       </body>
     </html>
   );

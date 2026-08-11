@@ -1,5 +1,4 @@
 import { Project } from "@/types";
-
 export const projects: Project[] = [
   {
     slug: "mathopia",
@@ -26,8 +25,19 @@ export const projects: Project[] = [
     featured: true,
     status: "completed",
     tags: ["debugger", "javascript", "developer-tools", "ai"]
-  }
+  },
+  {
+    slug: "route-comparator",
+    name: "Route Comparator Preview",
+    category: "Web Application",
+    shortDescription: "A interactive route comparison preview tool.",
+    longDescription: "An interactive visualization tool for testing and previewing route comparisons and travel paths.",
+    technologies: ["HTML", "CSS", "JavaScript"],
+    liveDemo: "https://routecomp.vercel.app/",
+    github: "https://github.com/td0911491-gif/portfolio",
+    featured: true,
+    status: "completed",
+    tags: ["routes", "preview", "web", "tool"]
+  },
 ];
-
 export const featuredProjects = projects.filter((p) => p.featured);
-

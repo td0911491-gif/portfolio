@@ -1,0 +1,30 @@
+---
+title: "Building a Top-Down Arcade Shooter in Lua With LÖVE"
+slug: "arcade-dodge-game-love2d"
+date: "2026-08-09"
+excerpt: "A small top-down dodge-and-shoot game, and why building it is a good excuse to learn a game loop, collision detection, and state management from first principles."
+tags: ["lua", "love2d", "gamedev"]
+---
+
+Most of my projects so far have been about what happens *underneath* — storage engines, file systems, parsers. A game is a different kind of hard: it's not about correctness, it's about **feel**. Sixty times a second, something has to update, check for collisions, and redraw — and if any of that gets sloppy, the player feels it immediately, even if they can't say why.
+
+I'm building a top-down arcade shooter/dodge game in Lua using the [LÖVE](https://love2d.org/) framework, and picking Lua + LÖVE specifically because it strips game development down to the essentials — no editor, no scene graph, no drag-and-drop. Just a game loop and code.
+
+## The shape of the game
+
+- A player-controlled ship that dodges incoming waves of enemies/projectiles
+- Simple, readable collision detection — the kind you can reason about by hand before ever reaching for a physics library
+- A wave/spawn system that ramps up difficulty over time
+- Score and game-over state, kept deliberately simple
+
+## What LÖVE actually gives you (and what it doesn't)
+
+LÖVE hands you exactly three functions to fill in: `love.load()`, `love.update(dt)`, and `love.draw()`. Everything else — how entities are represented, how collisions are checked, how state transitions between "playing" and "game over" — is a decision you make yourself. That's the appeal: there's no framework opinion to fight, but also no framework doing the boring parts for you.
+
+The part I expect to actually be hard isn't the code, it's the *feel* — tuning enemy spawn rates, movement speed, and hit detection until dodging feels tight instead of janky. That's an iteration problem, not a correctness problem, and it's a different kind of engineering discipline than anything in my other projects.
+
+## Why it's worth doing alongside the "serious" projects
+
+A database engine proves I can reason about correctness and disk-level systems. A C tool proves I can work without a safety net. A game proves something else entirely: that I can ship something people actually want to interact with, and iterate on how it *feels* rather than just whether it's *right*. That's a genuinely different skill, and one that's easy to skip if every project is backend-flavored.
+
+More to come once the core loop — spawn, move, collide, score — is actually playable.

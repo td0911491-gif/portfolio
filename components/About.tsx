@@ -1,6 +1,6 @@
 "use client";
-
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Section from "@/components/ui/Section";
 import { personal } from "@/data/personal";
 import { certifications } from "@/data/certifications";
@@ -15,6 +15,24 @@ const stats = [
 export default function About() {
   return (
     <Section id="about" command="about.md" title="About me" subtitle={personal.university}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="mb-8 flex justify-center md:justify-start"
+      >
+        <div className="relative h-40 w-40 overflow-hidden rounded-full border-2 border-red shadow-[0_0_30px_rgba(225,58,75,0.25)]">
+          <Image
+            src="/profile.jpeg"
+            alt="Tamoghna Dhar"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+      </motion.div>
+
       <div className="grid gap-10 md:grid-cols-[1.4fr_1fr]">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
@@ -25,7 +43,6 @@ export default function About() {
         >
           {personal.bio}
         </motion.p>
-
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
