@@ -8,7 +8,7 @@ import { certifications } from "@/data/certifications";
 const stats = [
   { label: "Year", value: "1st" },
   { label: "Certifications", value: String(certifications.length) },
-  { label: "Focus", value: "General CS" },
+  { label: "Focus", value: "AL/ML" },
   { label: "Status", value: "Studying" }
 ];
 
