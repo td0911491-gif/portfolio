@@ -9,7 +9,7 @@ const stats = [
   { label: "Year", value: "1st" },
   { label: "Certifications", value: String(certifications.length) },
   { label: "Focus", value: "General CS" },
-  { label: "Status", value: "Interning" }
+  { label: "Status", value: "Studying" }
 ];
 
 export default function About() {
