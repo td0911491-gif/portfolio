@@ -2,13 +2,12 @@
  * LeetCodeStats
  * -------------
  * Mirrors the GitHub Activity section's terminal styling, but shows a
- * live-generated LeetCode stats/streak card instead. Uses the free
+ * live-generated LeetCode activity heatmap instead. Uses the free
  * LeetCode-Stats-Card service (https://github.com/JacobLinCool/LeetCode-Stats-Card) --
  * no API key needed, the image is generated on request from your username.
  */
 
 const LEETCODE_USERNAME = "td0911491-gif";
-const STATS_CARD_URL = `https://leetcard.jacoblin.cool/${LEETCODE_USERNAME}?theme=dark`;
 const STREAK_CARD_URL = `https://leetcard.jacoblin.cool/${LEETCODE_USERNAME}?theme=dark&ext=heatmap`;
 
 export default function LeetCodeStats() {
@@ -29,21 +28,6 @@ export default function LeetCodeStats() {
         target="_blank"
         rel="noopener noreferrer"
         className="block border border-[#262422] hover:border-[#ff3b3b] transition-colors duration-200 overflow-hidden"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={STATS_CARD_URL}
-          alt="LeetCode stats"
-          className="w-full block"
-          loading="lazy"
-        />
-      </a>
-
-      <a
-        href={`https://leetcode.com/${LEETCODE_USERNAME}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block border border-[#262422] hover:border-[#ff3b3b] transition-colors duration-200 overflow-hidden mt-4"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
