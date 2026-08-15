@@ -1,11 +1,15 @@
 "use client";
 
 // ChatWidget — a floating "AI terminal" button in the corner of the site.
-// Clicking it opens a small chat panel. Runs the model fully client-side
-// via WebLLM (WebGPU) — no API key, no backend route needed.
+// Clicking it opens a small chat panel. This is a lightweight, fully
+// client-side FAQ matcher (no model download, no backend, no API key) --
+// it scores the visitor's question against a set of pre-written topics
+// about Tamoghna and replies with a canned answer. Loads instantly.
 //
-// Usage: import and render <ChatWidget /> once, in app/layout.tsx, so it
-// shows up on every page:
+// To teach it more, add entries to the KNOWLEDGE array below: give each
+// one a list of keywords to match on and the answer to show.
+//
+// Usage: import and render <ChatWidget /> once, in app/layout.tsx:
 //
 //   import ChatWidget from "@/components/ChatWidget";
 //   ...
@@ -13,118 +17,111 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+type Msg = { role: "user" | "assistant"; content: string };
 
-// Edit this to change what the bot knows / how it talks. Fill in your own
-// details so it can actually answer questions about you.
-const SYSTEM_PROMPT = `You are the AI assistant embedded in Tamoghna Dhar's developer portfolio site.
-Tamoghna is a 1st year BCA student and Software Engineer Intern at HackerRank,
-into Python, SQL, Java, and building projects like Mathopia, CogniDBG, and RouteComps_AI.
-Answer visitor questions about his background, skills, and projects in a friendly,
-concise way — a few sentences at most. Talk like a normal person, not a corporate bot.
-If you don't know something specific about him, say so plainly and suggest they check
-the relevant section of the site or reach out directly. Don't use bullet points or emoji.`;
+type KnowledgeEntry = {
+  keywords: string[];
+  answer: string;
+};
 
-type Msg = { role: "user" | "assistant" | "system"; content: string };
-type EngineStatus = "idle" | "loading" | "ready" | "error";
+// Edit these to change what the bot knows. Each entry needs a few keywords
+// (lowercase, no punctuation) and the answer to give when one of them
+// appears in the visitor's message.
+const KNOWLEDGE: KnowledgeEntry[] = [
+  {
+    keywords: ["who", "about", "yourself", "tamoghna", "intro"],
+    answer:
+      "Tamoghna is a 1st-year BCA student at Brainware University and a Software Engineer Intern at HackerRank, working with Python, SQL, and Java.",
+  },
+  {
+    keywords: ["work", "job", "intern", "internship", "hackerrank", "experience"],
+    answer:
+      "He's currently a Software Engineer Intern at HackerRank, getting hands-on with real engineering workflows.",
+  },
+  {
+    keywords: ["study", "college", "university", "school", "education", "bca", "degree"],
+    answer:
+      "He's a 1st-year Bachelor of Computer Applications (BCA) student at Brainware University, focused on general CS with an eye toward AI/ML.",
+  },
+  {
+    keywords: ["skill", "language", "tech", "stack", "know", "python", "java", "sql"],
+    answer:
+      "His main tools are Python, Java, and SQL, along with problem solving, data structures & algorithms, and Git/GitHub.",
+  },
+  {
+    keywords: ["project", "built", "build", "made", "portfolio"],
+    answer:
+      "A few things he's built: Mathopia (a math game), CogniDBG (a debugger), and RouteComps AI (an AI-powered travel comparison app). Check the Projects section for more.",
+  },
+  {
+    keywords: ["certification", "certificate", "certified", "cs50"],
+    answer:
+      "He's completed CS50x from Harvard, plus HackerRank certifications in Problem Solving and SQL, and a Deloitte data analytics job simulation. See the Certifications section for details.",
+  },
+  {
+    keywords: ["contact", "email", "reach", "hire", "linkedin", "connect"],
+    answer:
+      "Best way to reach him is via LinkedIn or email — links are in the 'Let's connect' section at the bottom of the site.",
+  },
+  {
+    keywords: ["hobby", "interest", "free time", "outside"],
+    answer:
+      "Outside of code, he's into cooking, basketball, cricket, football, and music.",
+  },
+  {
+    keywords: ["blog", "writing", "article", "post"],
+    answer:
+      "He writes short posts on things he's building — recent ones cover a SQL engine built from scratch and a CLI file organizer in C. Check the blog section.",
+  },
+];
+
+const FALLBACK_ANSWER =
+  "I don't have a specific answer for that — try asking about his skills, projects, education, or how to get in touch, or check the relevant section of the site.";
+
+function findAnswer(question: string): string {
+  const q = question.toLowerCase();
+  let best: { entry: KnowledgeEntry; score: number } | null = null;
+
+  for (const entry of KNOWLEDGE) {
+    const score = entry.keywords.reduce(
+      (acc, kw) => acc + (q.includes(kw) ? 1 : 0),
+      0
+    );
+    if (score > 0 && (!best || score > best.score)) {
+      best = { entry, score };
+    }
+  }
+
+  return best ? best.entry.answer : FALLBACK_ANSWER;
+}
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<EngineStatus>("idle");
-  const [progress, setProgress] = useState(0);
-  const [progressText, setProgressText] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const [generating, setGenerating] = useState(false);
+  const [typing, setTyping] = useState(false);
 
-  const engineRef = useRef<any>(null);
-  const historyRef = useRef<Msg[]>([{ role: "system", content: SYSTEM_PROMPT }]);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Load the model lazily — only once the visitor actually opens the panel,
-  // so nobody pays the download cost just for landing on the page.
-  useEffect(() => {
-    if (!open || status !== "idle") return;
-
-    let cancelled = false;
-    setStatus("loading");
-
-    (async () => {
-      if (!("gpu" in navigator)) {
-        setStatus("error");
-        setProgressText("Your browser doesn't support WebGPU. Try the latest Chrome or Edge on desktop.");
-        return;
-      }
-
-      try {
-        const webllm = await import("@mlc-ai/web-llm");
-        const engine = new webllm.MLCEngine();
-        engine.setInitProgressCallback((report: any) => {
-          if (cancelled) return;
-          setProgress(Math.round((report.progress || 0) * 100));
-          setProgressText(report.text || "Loading…");
-        });
-        await engine.reload(MODEL_ID);
-        if (cancelled) return;
-        engineRef.current = engine;
-        setStatus("ready");
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) {
-          setStatus("error");
-          setProgressText("Couldn't load the model. Check the console for details.");
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, status]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, generating]);
+  }, [messages, typing]);
 
-  async function send() {
+  function send() {
     const text = input.trim();
-    if (!text || generating || status !== "ready") return;
+    if (!text || typing) return;
 
     const userMsg: Msg = { role: "user", content: text };
-    historyRef.current.push(userMsg);
     setMessages((m) => [...m, userMsg]);
     setInput("");
-    setGenerating(true);
+    setTyping(true);
 
-    try {
-      const stream = await engineRef.current.chat.completions.create({
-        messages: historyRef.current,
-        stream: true,
-        temperature: 0.8,
-        max_tokens: 400,
-      });
-
-      let reply = "";
-      setMessages((m) => [...m, { role: "assistant", content: "" }]);
-
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content || "";
-        if (!delta) continue;
-        reply += delta;
-        setMessages((m) => {
-          const copy = [...m];
-          copy[copy.length - 1] = { role: "assistant", content: reply };
-          return copy;
-        });
-      }
-
-      historyRef.current.push({ role: "assistant", content: reply || "…" });
-    } catch (err) {
-      console.error(err);
-      setMessages((m) => [...m, { role: "assistant", content: "Sorry, something broke generating that reply." }]);
-    } finally {
-      setGenerating(false);
-    }
+    // Small delay so the reply doesn't feel instant/robotic.
+    const answer = findAnswer(text);
+    setTimeout(() => {
+      setMessages((m) => [...m, { role: "assistant", content: answer }]);
+      setTyping(false);
+    }, 400);
   }
 
   return (
@@ -134,11 +131,7 @@ export default function ChatWidget() {
           {/* header */}
           <div className="flex items-center justify-between border-b border-red-600/30 bg-zinc-950 px-3 py-2">
             <div className="flex items-center gap-2">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  status === "ready" ? "bg-red-500 animate-pulse" : "bg-zinc-600"
-                }`}
-              />
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
               <span className="text-xs text-zinc-300">~/ask-tamoghna</span>
             </div>
             <button
@@ -152,24 +145,7 @@ export default function ChatWidget() {
 
           {/* body */}
           <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3 text-sm">
-            {status === "loading" && (
-              <div className="text-zinc-500 text-xs">
-                <p className="mb-2">$ loading model… ({progress}%)</p>
-                <div className="h-1 w-full rounded-full bg-zinc-800">
-                  <div
-                    className="h-1 rounded-full bg-red-600 transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-zinc-600">{progressText}</p>
-              </div>
-            )}
-
-            {status === "error" && (
-              <p className="text-xs text-red-400">$ error: {progressText}</p>
-            )}
-
-            {status === "ready" && messages.length === 0 && (
+            {messages.length === 0 && (
               <p className="text-zinc-500 text-xs">$ ready. ask me anything about Tamoghna.</p>
             )}
 
@@ -187,9 +163,7 @@ export default function ChatWidget() {
               </div>
             ))}
 
-            {generating && messages[messages.length - 1]?.content === "" && (
-              <p className="text-xs text-zinc-500">…</p>
-            )}
+            {typing && <p className="text-xs text-zinc-500">…</p>}
           </div>
 
           {/* input */}
@@ -204,8 +178,8 @@ export default function ChatWidget() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={status !== "ready" || generating}
-              placeholder={status === "ready" ? "type a message…" : "waiting for model…"}
+              disabled={typing}
+              placeholder="type a message…"
               className="flex-1 bg-transparent text-xs text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-40"
             />
           </form>
