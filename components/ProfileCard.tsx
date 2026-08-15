@@ -17,8 +17,8 @@ export default function ProfileCard() {
             priority
           />
         </div>
-        {/* Status indicator - overlapping bottom */}
-        
+       {/* Status indicator - overlapping bottom */}
+        <a
           href="https://www.linkedin.com/in/tamoghna-dhar/"
           target="_blank"
           rel="noopener noreferrer"
@@ -27,7 +27,3 @@ export default function ProfileCard() {
           <span className="w-3 h-3 rounded-full bg-cream animate-pulse" />
           <span className="text-sm font-bold text-cream tracking-wide">Open to work</span>
         </a>
-      </div>
-    </div>
-  );
-}
