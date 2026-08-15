@@ -30,8 +30,7 @@ export default function LeetCodeStats() {
       <p className="font-mono text-sm text-[#7a7672] mb-10">
         Codeforces @{CODEFORCES_HANDLE} · LeetCode @{LEETCODE_USERNAME}
       </p>
-
-      
+      <a
         href={`https://codeforces.com/profile/${CODEFORCES_HANDLE}`}
         target="_blank"
         rel="noopener noreferrer"
