@@ -27,3 +27,7 @@ export default function ProfileCard() {
           <span className="w-3 h-3 rounded-full bg-cream animate-pulse" />
           <span className="text-sm font-bold text-cream tracking-wide">Open to work</span>
         </a>
+      </div>
+    </div>
+  );
+}
