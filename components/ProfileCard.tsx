@@ -1,4 +1,5 @@
 import Image from "next/image";
+
 export default function ProfileCard() {
   return (
     <div className="relative w-full max-w-sm mx-auto">
@@ -17,10 +18,15 @@ export default function ProfileCard() {
           />
         </div>
         {/* Status indicator - overlapping bottom */}
-        <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-gradient-to-r from-red to-red/80 px-6 py-3 rounded-full border-2 border-red shadow-lg z-10">
+        
+          href="https://www.linkedin.com/in/tamoghna-dhar/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-gradient-to-r from-red to-red/80 px-6 py-3 rounded-full border-2 border-red shadow-lg z-10 hover:brightness-110 transition"
+        >
           <span className="w-3 h-3 rounded-full bg-cream animate-pulse" />
           <span className="text-sm font-bold text-cream tracking-wide">Open to work</span>
-        </div>
+        </a>
       </div>
     </div>
   );
