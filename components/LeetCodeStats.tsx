@@ -7,6 +7,7 @@
  * no API key needed. Bottom card is the LeetCode activity heatmap from
  * LeetCode-Stats-Card (https://github.com/JacobLinCool/LeetCode-Stats-Card).
  */
+
 const LEETCODE_USERNAME = "td0911491-gif";
 const CODEFORCES_HANDLE = "Tamoghna_Dhar";
 
@@ -30,6 +31,7 @@ export default function LeetCodeStats() {
       <p className="font-mono text-sm text-[#7a7672] mb-10">
         Codeforces @{CODEFORCES_HANDLE} · LeetCode @{LEETCODE_USERNAME}
       </p>
+
       <a
         href={`https://codeforces.com/profile/${CODEFORCES_HANDLE}`}
         target="_blank"
@@ -44,8 +46,7 @@ export default function LeetCodeStats() {
           loading="lazy"
         />
       </a>
-
-      
+      <a
         href={`https://leetcode.com/${LEETCODE_USERNAME}`}
         target="_blank"
         rel="noopener noreferrer"
